@@ -15,16 +15,41 @@ function restoreContentScrollPosition() {
     $("#content")[0].scrollTop = contentScrollPosition;
 }
 function updateHeader(viewTitle) {
-    let title = viewTitle; 
-    let headerContent = `
+    let loggedUser = API.retrieveLoggedUser(); 
+    let headerContent = '';
+
+    if (viewTitle === 'Liste de photos' && loggedUser) {
+        headerContent = `
+        <span title="Liste des photos" id="listPhotosCmd">
+        <img src="images/PhotoCloudLogo.png" class="appLogo">
+         </span>
+        <span class="viewTitle">Liste des photos
+        <div class="cmdIcon fa fa-plus" id="newPhotoCmd" title="Ajouter une photo"></div>
+        </span>
         <div class="headerMenusContainer">
-            <img src="../PhotosManager/favicon.ico" alt="App Logo" class="app-logo">
-            <div class="viewTitle">${title}</div>
+        <span>&nbsp;</span> <!--filler-->
+        <i title="Modifier votre profil">
+        <div class="UserAvatarSmall" userid="${loggedUser.Id}" id="editProfilCmd"
+        style="background-image:url('${loggedUser.Avatar}')"
+        title="Nicolas Chourot"></div>
+        </i>
+        <div class="dropdown ms-auto dropdownLayout">
+        <!-- Articles de menu -->
         </div>
-    `;
+        </div>
+        `;
+    } else {
+        headerContent = `
+            <div class="headerMenusContainer">
+                <img src="../PhotosManager/favicon.ico" alt="App Logo" class="app-logo">
+                <div class="viewTitle">${viewTitle}</div>
+            </div>
+        `;
+    }
 
     $("#header").html(headerContent);
 }
+
 function renderAbout() {
     timeout();
     saveContentScrollPosition();
@@ -50,28 +75,20 @@ function renderAbout() {
         `))
 }
 
-function renderLogin() {
+function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordError = '') {
     saveContentScrollPosition();
     eraseContent();
     updateHeader('Connexion');
-    let loginMessage = ""; 
-    let Email = ""; 
-    let EmailError = ""; 
-    let passwordError = ""; 
 
     let loginContent = `
         <div class="content" style="text-align:center">
             <h3>${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre courriel'
-                    InvalidMessage = 'Courriel invalide'
-                    placeholder="adresse de courriel"
-                    value='${Email}'>
+                    placeholder="adresse de courriel" value='${Email}'>
                 <span style='color:red'>${EmailError}</span>
                 <input type='password' name='Password' placeholder='Mot de passe'
-                    class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre mot de passe'>
+                    class="form-control" required>
                 <span style='color:red'>${passwordError}</span>
                 <input type='submit' name='submit' value="Entrer" class="form-control btn-primary">
             </form>
@@ -88,15 +105,19 @@ function renderLogin() {
         e.preventDefault();
         let email = $("input[name='Email']").val();
         let password = $("input[name='Password']").val();
-    
+
         API.login(email, password).then(user => {
             if(user) {
- 
                 renderPhotos(); 
-                
             } else {
-                
-                $("h3").text("Erreur");
+                // Depending on the error status, update the message and re-render
+                if(API.currentStatus === 482) {
+                    renderLogin('', email, '', "Mot de passe incorrect");
+                } else if(API.currentStatus === 481) {
+                    renderLogin('', '', "Courriel introuvable", '');
+                } else {
+                    renderLogin("Le serveur ne repond pas", email, '', '');
+                }
             }
         });
     });
@@ -107,6 +128,7 @@ function renderLogin() {
 
     restoreContentScrollPosition();
 }
+
 
 
 function renderInscription() {
@@ -196,8 +218,14 @@ function renderInscription() {
 }
 
 $(document).ready(function() {
-    renderLogin();
-}); 
+    let loggedUser = API.retrieveLoggedUser();
+    
+    if (loggedUser) {
+        renderPhotos();
+    } else {
+        renderLogin();
+    }
+});
 
 
 function renderPhotos() {
