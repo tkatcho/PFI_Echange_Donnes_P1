@@ -2,37 +2,170 @@ let contentScrollPosition = 0;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// Views rendering
 function showWaitingGif() {
-    eraseContent();
-    $("#content").append($("<div class='waitingGifcontainer'><img class='waitingGif' src='images/Loading_icon.gif' /></div>'"));
+  eraseContent();
+  $("#content").append(
+    $(
+      "<div class='waitingGifcontainer'><img class='waitingGif' src='images/Loading_icon.gif' /></div>'"
+    )
+  );
 }
 function eraseContent() {
-    $("#content").empty();
+  $("#content").empty();
 }
 function saveContentScrollPosition() {
-    contentScrollPosition = $("#content")[0].scrollTop;
+  contentScrollPosition = $("#content")[0].scrollTop;
 }
 function restoreContentScrollPosition() {
-    $("#content")[0].scrollTop = contentScrollPosition;
+  $("#content")[0].scrollTop = contentScrollPosition;
 }
 function updateHeader(viewTitle) {
-    let title = viewTitle; 
-    let headerContent = `
+  let title = viewTitle;
+  let headerContent = `
+      <span title="Liste des photos" id="listPhotosCmd">
+        <img src="images/PhotoCloudLogo.png" class="appLogo">
+      </span>
+      <span class="viewTitle">${title}
+        </span
+
         <div class="headerMenusContainer">
-            <img src="../PhotosManager/favicon.ico" alt="App Logo" class="app-logo">
-            <div class="viewTitle">${title}</div>
+
+
+        <div class="dropdown ms-auto dropdownLayout">
+
+        </div>
         </div>
     `;
 
-    $("#header").html(headerContent);
+  $("#header").html(headerContent);
 }
-function renderAbout() {
-    timeout();
-    saveContentScrollPosition();
-    eraseContent();
-    UpdateHeader("À propos...", "about");
 
-    $("#content").append(
-        $(`
+function updateDropDown() {}
+
+function test() {
+  let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="cmdIcon fa fa-ellipsis-vertical"></i>
+    </div>
+    <div class="dropdown-menu noselect">
+    <span class="dropdown-item" id="manageUserCm">
+    <i class="menuIcon fas fa-user-cog mx-2"></i>
+    Gestion des usagers
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="logoutCmd">
+    <i class="menuIcon fa fa-sign-out mx-2"></i>
+    Déconnexion
+    </span>
+    <span class="dropdown-item" id="editProfilMenuCmd">
+    <i class="menuIcon fa fa-user-edit mx-2"></i>
+    Modifier votre profil
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="listPhotosMenuCmd">
+    <i class="menuIcon fa fa-image mx-2"></i>
+    Liste des photos
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="sortByDateCmd">
+    <i class="menuIcon fa fa-check mx-2"></i>
+    <i class="menuIcon fa fa-calendar mx-2"></i>
+    Photos par date de création
+    </span>
+    <span class="dropdown-item" id="sortByOwnersCmd">
+    <i class="menuIcon fa fa-fw mx-2"></i>
+    <i class="menuIcon fa fa-users mx-2"></i>
+    Photos par créateur
+    </span>
+    <span class="dropdown-item" id="sortByLikesCmd">
+    <i class="menuIcon fa fa-fw mx-2"></i>
+    <i class="menuIcon fa fa-user mx-2"></i>
+    Photos les plus aiméés
+    </span>
+    <span class="dropdown-item" id="ownerOnlyCmd">
+    <i class="menuIcon fa fa-fw mx-2"></i>
+    <i class="menuIcon fa fa-user mx-2"></i>
+    Mes photos
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="aboutCmd">
+    <i class="menuIcon fa fa-info-circle mx-2"></i>
+    À propos...
+    </span>
+    </div>`;
+
+  $(".dropdown").html(content);
+}
+
+function dropDownAnonymous() {
+  let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="cmdIcon fa fa-ellipsis-vertical"></i>
+    </div>
+    <div class="dropdown-menu noselect">
+    <span class="dropdown-item" id="loginCmd">
+    <i class="menuIcon fa fa-sign-in mx-2"></i>
+    Connexion
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="aboutCmd">
+    <i class="menuIcon fa fa-info-circle mx-2"></i>
+    À propos...
+    </span>
+    </div>`;
+
+  $(".dropdown").html(content);
+}
+
+function updateDropDownMenu(categories) {
+  let DDMenu = $(".dropdown");
+  let selectClass = selectedCategory === "" ? "fa-check" : "fa-fw";
+  DDMenu.empty();
+  DDMenu.append(
+    $(`
+        <div class="dropdown-item menuItemLayout" id="allCatCmd">
+            <i class="menuIcon fa ${selectClass} mx-2"></i> Toutes les catégories
+        </div>
+        `)
+  );
+  DDMenu.append($(`<div class="dropdown-divider"></div>`));
+  categories.forEach((category) => {
+    selectClass = selectedCategory === category ? "fa-check" : "fa-fw";
+    DDMenu.append(
+      $(`
+            <div class="dropdown-item menuItemLayout category" id="allCatCmd">
+                <i class="menuIcon fa ${selectClass} mx-2"></i> ${category}
+            </div>
+        `)
+    );
+  });
+  DDMenu.append($(`<div class="dropdown-divider"></div> `));
+  DDMenu.append(
+    $(`
+        <div class="dropdown-item menuItemLayout" id="aboutCmd">
+            <i class="menuIcon fa fa-info-circle mx-2"></i> À propos...
+        </div>
+        `)
+  );
+  $("#aboutCmd").on("click", function () {
+    renderAbout();
+  });
+  $("#allCatCmd").on("click", function () {
+    selectedCategory = "";
+    //renderBookmarks();
+  });
+  $(".category").on("click", function () {
+    //selectedCategory = $(this).text().trim();
+    //renderBookmarks();
+  });
+}
+
+//#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
+function renderAbout() {
+  timeout();
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("À propos...", "about");
+
+  $("#content").append(
+    $(`
             <div class="aboutContainer">
                 <h2>Gestionnaire de photos</h2>
                 <hr>
@@ -47,19 +180,21 @@ function renderAbout() {
                     Collège Lionel-Groulx, automne 2023
                 </p>
             </div>
-        `))
+        `)
+  );
 }
 
 function renderLogin() {
-    saveContentScrollPosition();
-    eraseContent();
-    updateHeader('Connexion');
-    let loginMessage = ""; 
-    let Email = ""; 
-    let EmailError = ""; 
-    let passwordError = ""; 
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Connexion");
+  dropDownAnonymous();
+  let loginMessage = "";
+  let Email = "";
+  let EmailError = "";
+  let passwordError = "";
 
-    let loginContent = `
+  let loginContent = `
         <div class="content" style="text-align:center">
             <h3>${loginMessage}</h3>
             <form class="form" id="loginForm">
@@ -82,40 +217,37 @@ function renderLogin() {
         </div>
     `;
 
-    $("#content").append($(loginContent));
+  $("#content").append($(loginContent));
 
-    $("#loginForm").on('submit', function(e) {
-        e.preventDefault();
-        let email = $("input[name='Email']").val();
-        let password = $("input[name='Password']").val();
-    
-        API.login(email, password).then(user => {
-            if(user) {
- 
-                renderPhotos(); 
-                
-            } else {
-                
-                $("h3").text("Erreur");
-            }
-        });
+  $("#loginForm").on("submit", function (e) {
+    e.preventDefault();
+    let email = $("input[name='Email']").val();
+    let password = $("input[name='Password']").val();
+
+    API.login(email, password).then((user) => {
+      if (user) {
+        renderPhotos();
+
+        timeout();
+      } else {
+        $("h3").text("Erreur");
+      }
     });
+  });
 
-    $("#createProfilCmd").on('click', function() {
-        renderInscription(); 
-    });
+  $("#createProfilCmd").on("click", function () {
+    renderInscription();
+  });
 
-    restoreContentScrollPosition();
+  restoreContentScrollPosition();
 }
 
-
 function renderInscription() {
-    saveContentScrollPosition();
-    eraseContent();
-    updateHeader('Inscription');
-   
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Inscription");
 
-    let registerContent = `
+  let registerContent = `
     <form class="form" id="createProfilForm"'>
     <fieldset>
     <legend>Adresse ce courriel</legend>
@@ -182,32 +314,32 @@ function renderInscription() {
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
     </div>`;
 
-    $("#content").append($(registerContent));
+  $("#content").append($(registerContent));
 
+  $("#createProfilCmd").on("click", function () {});
+  $("#abortCmd").on("click", function () {
+    renderLogin();
+  });
 
-    $("#createProfilCmd").on('click', function() {
-    });
-    $("#abortCmd").on('click', function() {
-        renderLogin(); 
-    });
-
-
-    restoreContentScrollPosition();
+  restoreContentScrollPosition();
 }
 
-$(document).ready(function() {
-    renderLogin();
-}); 
+$(document).ready(function () {
+  renderLogin();
+});
 
+function renderUpdate() {}
+
+function renderGestionPersonnage() {}
 
 function renderPhotos() {
-    saveContentScrollPosition();
-    eraseContent();
-    updateHeader('Liste de photos'); 
-    let photosContent = `
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Liste de photos");
+  let photosContent = `
    <h1> Photos </h1>
 `;
 
-$("#content").append($(photosContent));
-
+  $("#content").append($(photosContent));
 }
+//#endregion

@@ -18,7 +18,7 @@ let timeBeforeRedirect = 5;
 let timeoutCallBack = () => {};
 let infinite = -1;
 let timeLeft = infinite;
-let maxStallingTime = infinite;
+let maxStallingTime = 5;
 
 function initTimeout(stallingTime = infinite, callback = timeoutCallBack) {
     maxStallingTime = stallingTime;
