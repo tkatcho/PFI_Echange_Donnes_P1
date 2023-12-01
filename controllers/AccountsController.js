@@ -169,7 +169,11 @@ export default class AccountsController extends Controller {
     }
     // GET:account/remove/id
     remove(id) { // warning! this is not an API endpoint
-        if (Authorizations.writeGranted(this.HttpContext, Authorizations.user()))
+        if (Authorizations.writeGranted(this.HttpContext, Authorizations.user())) {
+            let previousAuthorization = this.authorizations; // cette ligne manquait
+            this.authorizations = Authorizations.user();
             super.remove(id);
+            this.authorizations = previousAuthorization;
+        }
     }
 }

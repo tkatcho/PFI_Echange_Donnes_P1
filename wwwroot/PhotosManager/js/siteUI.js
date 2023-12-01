@@ -242,7 +242,12 @@ $(document).ready(function () {
   renderLogin();
 });
 
-function logout() {}
+function logout() {
+  API.logout();
+  isAdmin = false;
+  isConnected = false;
+  loggedUser = null;
+}
 function renderModifyPersonnage() {}
 
 function renderGestionPersonnage() {
@@ -278,7 +283,6 @@ function renderGestionPersonnage() {
 }
 
 function renderUser(user) {
-  console.log(user);
   let userRank = `<span class="adminCmd fas fa-user-alt dodgerblueCmd" adminuser_id="${user.Id}" title="Ajouter comme admin ${user.Name}"></span>`;
   let userStatus = `<span class="blockCmd fa-regular fa-circle greenCmd" blockuser_id="${user.Id}" title="Blocker ${user.Name}"></span>`;
 
@@ -444,83 +448,10 @@ function dropDownAnonymous() {
   $(".dropdown").html(content);
   renderCmds();
 }
-function addAdmin(userId) {
-  API.GetAccounts()
-    .then((response) => {
-      if (response && response.data && Array.isArray(response.data)) {
-        const users = response.data;
-        const blockedUser = users.find(user => user.Id === userId);
-
-        if (blockedUser) {
-          // Update the user's information to mark as blocked
-          const updatedInfo = { ...blockedUser, isBlocked: true };
-
-          // Make an API call to update the user
-          API.UpdateUser(userId, updatedInfo)
-            .then((updatedUser) => {
-              if (updatedUser) {
-                console.log("User with ID " + userId + " successfully blocked.");
-                // Optionally, update the UI or perform additional actions
-              } else {
-                console.error("Failed to block user with ID " + userId);
-                // Handle the failure, show an error message, etc.
-              }
-            })
-            .catch((error) => {
-              console.error("Error blocking user with ID " + userId + ":", error);
-              // Handle the error, show an error message, etc.
-            });
-        } else {
-          console.error("Error: User with ID " + userId + " not found.");
-        }
-      } else {
-        console.error("Error: Unexpected API response format.");
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching user accounts:", error);
-    });
-}
+function addAdmin(userId) {}
 function removeAdmin(id) {}
-function blockUser(userId) {
-  // Fetch the existing user information
-  API.GetAccounts()
-    .then((response) => {
-      if (response && response.data && Array.isArray(response.data)) {
-        const users = response.data;
-        const blockedUser = users.find(user => user.Id === userId);
-
-        if (blockedUser) {
-          // Update the user's information to mark as blocked
-          const updatedInfo = new User(blockedUser);
-          updatedInfo.Authorizations = { ...blockedUser.Authorizations, isBlocked: true };
-
-          // Make an API call to update the user
-          API.UpdateUser(userId, updatedInfo)
-            .then((updatedUser) => {
-              if (updatedUser) {
-                console.log("User with ID " + userId + " successfully blocked.");
-                // Optionally, update the UI or perform additional actions
-              } else {
-                console.error("Failed to block user with ID " + userId);
-                // Handle the failure, show an error message, etc.
-              }
-            })
-            .catch((error) => {
-              console.error("Error blocking user with ID " + userId + ":", error);
-              // Handle the error, show an error message, etc.
-            });
-        } else {
-          console.error("Error: User with ID " + userId + " not found.");
-        }
-      } else {
-        console.error("Error: Unexpected API response format.");
-      }
-    })
-    .catch((error) => {
-      console.error("Error fetching user accounts:", error);
-    });
-}function unBlockUser(id) {}
+function blockUser(userId) {}
+function unBlockUser(id) {}
 function removeUser(userId) {}
 
 function renderCmds() {
@@ -564,7 +495,6 @@ function renderCmds() {
   });
   $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
-    console.log("delete " + userId);
 
     deleteUser(userId);
   });
