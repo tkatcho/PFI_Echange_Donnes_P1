@@ -25,27 +25,28 @@ function updateHeader(viewTitle) {
   let title = viewTitle;
   let headerContent;
 
-  if (isConnected) {
+  if (isConnected && title == "Liste de photos") {
     headerContent = `
     <span title="Liste des photos" id="listPhotosCmd">
-      <img src="images/PhotoCloudLogo.png" class="appLogo">
-    </span>
-    <span class="viewTitle">${title}
-      </span
+  <img src="images/PhotoCloudLogo.png" class="appLogo">
+</span>
 
-      <div class="headerMenusContainer">
-        <span>&nbsp;</span>
-        <i title="Modifier votre profil">
-          <div class="UserAvatarSmall" userid="${loggedUser.Id}" id="editProfilCmd"
-          style="background-image:url('${loggedUser.Avatar}')"
-          title="Nicolas Chourot"></div>
+<span class="viewTitle">${title}
+  <div class="cmdIcon fa fa-plus" id="newPhotoCmd" title="Ajouter une photo"></div>
+</span>
 
-        </i>
+<div class="headerMenusContainer">
+  <span>&nbsp;</span>
+  <i title="Modifier votre profil">
+    <div class="UserAvatarSmall" userid="${loggedUser.Id}" id="editProfilCmd"
+      style="background-image:url('${loggedUser.Avatar}')"
+      title="Nicolas Chourot"></div>
+  </i>
 
-        <div class="dropdown ms-auto dropdownLayout">
-
-        </div>
-      </div>
+  <div class="dropdown ms-auto dropdownLayout">
+    <!-- Your dropdown content goes here -->
+  </div>
+</div>
   `;
   } else {
     headerContent = `
@@ -241,6 +242,7 @@ function renderInscription() {
 $(document).ready(function () {
   renderLogin();
 });
+
 function logout() {}
 function renderModifyPersonnage() {}
 
@@ -250,14 +252,68 @@ function renderGestionPersonnage() {
   eraseContent();
   updateHeader("Gestion des usagers");
 
-  $("#content").append(
-    $(`
-            
-        `)
-  );
-  dropDownUsers(isAdmin);
+  API.GetAccounts()
+    .then((response) => {
+      if (response && response.data && Array.isArray(response.data)) {
+        const users = response.data;
+
+        console.log(users);
+
+        if (users.length > 0) {
+          users.forEach((user) => {
+            $("#content").append(renderUser(user));
+          });
+          restoreContentScrollPosition();
+        } else {
+          console.error("Error: No user accounts found.");
+        }
+
+        dropDownUsers(isAdmin);
+      } else {
+        console.error("Error: Unexpected API response format.");
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching user accounts:", error);
+    });
 }
 
+function renderUser(user) {
+  let userRank = `<span class="adminCmd fas fa-user-alt dodgerblueCmd" adminuser_id="${user.Id}" title="Ajouter comme admin ${user.Name}"></span>`;
+  let userStatus = `<span class="blockCmd fa-regular fa-circle greenCmd" blockuser_id="${user.Id}" title="Blocker ${user.Name}"></span>`;
+
+  if (
+    user.Authorizations["readAccess"] === 2 &&
+    user.Authorizations["writeAccess"] === 2
+  )
+    userRank = `<span class="unAdminCmd fas fa-user-cog dodgerblueCmd" unadminuser_id="${user.Id}" title="Enlever comme admin ${user.Name}"></span>`;
+
+  if (
+    user.Authorizations["readAccess"] === -1 &&
+    user.Authorizations["writeAccess"] === -1
+  )
+    userStatus = `<span class="unBlockCmd fa fa-ban redCmd" unblockuser_id="${user.Id}" title="Deblocker ${user.Name}"></span>`;
+
+
+  return `
+  <div class="UserRow" User_id="${user.Id}">
+  <div class="UserContainer noselect">
+    <div class="UserLayout">
+      <div class="UserAvatar" style="background-image:url('${user.Avatar}')"></div>
+      <div class="UserInfo">
+        <span class="UserName">${user.Name}</span>
+        <a href="mailto:${user.Email}" class="UserEmail" target="_blank">${user.Email}</a>
+      </div>
+    </div>
+    <div class="UserCommandPanel">
+      ${userRank}
+      ${userStatus}
+      <span class="deleteCmd fas fa-user-slash goldenrodCmd" deleteuser_id="${user.Id}" title="Effacer ${user.Name}"></span>
+    </div>
+  </div>
+</div>
+  `;
+}
 function renderPhotos() {
   saveContentScrollPosition();
   eraseContent();
@@ -391,6 +447,23 @@ function dropDownAnonymous() {
   $(".dropdown").html(content);
   renderCmds();
 }
+
+function addAdmin(){
+
+}
+function removeAdmin(){
+  
+}
+function blockUser(){
+  
+}
+function unBlockUser(){
+  
+}
+
+function removeUser(userId){
+
+}
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
     renderAbout();
@@ -412,6 +485,24 @@ function renderCmds() {
     if (!isConnected) {
       renderLogin();
     } else renderPhotos();
+  });
+
+  $("#adminCmd").on("click", function () {
+    addAdmin();
+  });
+  $("#unAdminCmd").on("click", function () {
+    removeAdmin();
+  });
+  $("#blockCmd").on("click", function () {
+    blockUser();
+  });
+  $("#unBlockCmd").on("click", function () {
+    unBlockUser();
+  });
+  $("#deleteCmd").on("click", function () {
+    const userId = $(this).attr("deleteuser_id");
+          
+    deleteUser(userId);
   });
 }
 //#endregion

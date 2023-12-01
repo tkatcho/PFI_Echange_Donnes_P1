@@ -146,7 +146,7 @@ class API {
             });
         });
     }
-    static GetAccounts() {
+     static GetAccounts() {
         API.initHttpState();
         return new Promise(resolve => {
             $.ajax({
