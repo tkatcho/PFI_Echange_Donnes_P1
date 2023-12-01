@@ -276,6 +276,7 @@ function renderGestionPersonnage() {
     .catch((error) => {
       console.error("Error fetching user accounts:", error);
     });
+    renderCmds();
 }
 
 function renderUser(user) {
