@@ -68,7 +68,6 @@ function updateHeader(viewTitle) {
   $("#header").html(headerContent);
   renderCmds();
 }
-
 //#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
 function renderAbout() {
   timeout();
@@ -256,19 +255,18 @@ function renderGestionPersonnage() {
     .then((response) => {
       if (response && response.data && Array.isArray(response.data)) {
         const users = response.data;
-
-        console.log(users);
-
         if (users.length > 0) {
           users.forEach((user) => {
             $("#content").append(renderUser(user));
           });
           restoreContentScrollPosition();
+          renderCmds();
         } else {
           console.error("Error: No user accounts found.");
         }
 
         dropDownUsers(isAdmin);
+        renderCmds();
       } else {
         console.error("Error: Unexpected API response format.");
       }
@@ -276,10 +274,11 @@ function renderGestionPersonnage() {
     .catch((error) => {
       console.error("Error fetching user accounts:", error);
     });
-    renderCmds();
+  renderCmds();
 }
 
 function renderUser(user) {
+  console.log(user);
   let userRank = `<span class="adminCmd fas fa-user-alt dodgerblueCmd" adminuser_id="${user.Id}" title="Ajouter comme admin ${user.Name}"></span>`;
   let userStatus = `<span class="blockCmd fa-regular fa-circle greenCmd" blockuser_id="${user.Id}" title="Blocker ${user.Name}"></span>`;
 
@@ -294,7 +293,6 @@ function renderUser(user) {
     user.Authorizations["writeAccess"] === -1
   )
     userStatus = `<span class="unBlockCmd fa fa-ban redCmd" unblockuser_id="${user.Id}" title="Deblocker ${user.Name}"></span>`;
-
 
   return `
   <div class="UserRow" User_id="${user.Id}">
@@ -326,7 +324,6 @@ function renderPhotos() {
 
   $("#content").append($(photosContent));
 }
-
 function dropDownUsers(isAdmin) {
   let content;
   if (isAdmin) {
@@ -428,7 +425,6 @@ function dropDownUsers(isAdmin) {
   $(".dropdown").html(content);
   renderCmds();
 }
-
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
     <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -448,23 +444,85 @@ function dropDownAnonymous() {
   $(".dropdown").html(content);
   renderCmds();
 }
+function addAdmin(userId) {
+  API.GetAccounts()
+    .then((response) => {
+      if (response && response.data && Array.isArray(response.data)) {
+        const users = response.data;
+        const blockedUser = users.find(user => user.Id === userId);
 
-function addAdmin(){
+        if (blockedUser) {
+          // Update the user's information to mark as blocked
+          const updatedInfo = { ...blockedUser, isBlocked: true };
 
+          // Make an API call to update the user
+          API.UpdateUser(userId, updatedInfo)
+            .then((updatedUser) => {
+              if (updatedUser) {
+                console.log("User with ID " + userId + " successfully blocked.");
+                // Optionally, update the UI or perform additional actions
+              } else {
+                console.error("Failed to block user with ID " + userId);
+                // Handle the failure, show an error message, etc.
+              }
+            })
+            .catch((error) => {
+              console.error("Error blocking user with ID " + userId + ":", error);
+              // Handle the error, show an error message, etc.
+            });
+        } else {
+          console.error("Error: User with ID " + userId + " not found.");
+        }
+      } else {
+        console.error("Error: Unexpected API response format.");
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching user accounts:", error);
+    });
 }
-function removeAdmin(){
-  
-}
-function blockUser(){
-  
-}
-function unBlockUser(){
-  
-}
+function removeAdmin(id) {}
+function blockUser(userId) {
+  // Fetch the existing user information
+  API.GetAccounts()
+    .then((response) => {
+      if (response && response.data && Array.isArray(response.data)) {
+        const users = response.data;
+        const blockedUser = users.find(user => user.Id === userId);
 
-function removeUser(userId){
+        if (blockedUser) {
+          // Update the user's information to mark as blocked
+          const updatedInfo = new User(blockedUser);
+          updatedInfo.Authorizations = { ...blockedUser.Authorizations, isBlocked: true };
 
-}
+          // Make an API call to update the user
+          API.UpdateUser(userId, updatedInfo)
+            .then((updatedUser) => {
+              if (updatedUser) {
+                console.log("User with ID " + userId + " successfully blocked.");
+                // Optionally, update the UI or perform additional actions
+              } else {
+                console.error("Failed to block user with ID " + userId);
+                // Handle the failure, show an error message, etc.
+              }
+            })
+            .catch((error) => {
+              console.error("Error blocking user with ID " + userId + ":", error);
+              // Handle the error, show an error message, etc.
+            });
+        } else {
+          console.error("Error: User with ID " + userId + " not found.");
+        }
+      } else {
+        console.error("Error: Unexpected API response format.");
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching user accounts:", error);
+    });
+}function unBlockUser(id) {}
+function removeUser(userId) {}
+
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
     renderAbout();
@@ -488,21 +546,26 @@ function renderCmds() {
     } else renderPhotos();
   });
 
-  $("#adminCmd").on("click", function () {
-    addAdmin();
+  $(".adminCmd").on("click", function () {
+    const userId = $(this).attr("adminuser_id");
+    addAdmin(userId);
   });
-  $("#unAdminCmd").on("click", function () {
-    removeAdmin();
+  $(".unAdminCmd").on("click", function () {
+    const userId = $(this).attr("unadminuser_id");
+    removeAdmin(userId);
   });
-  $("#blockCmd").on("click", function () {
-    blockUser();
+  $(".blockCmd").on("click", function () {
+    const userId = $(this).attr("blockuser_id");
+    blockUser(userId);
   });
-  $("#unBlockCmd").on("click", function () {
-    unBlockUser();
+  $(".unBlockCmd").on("click", function () {
+    const userId = $(this).attr("unblockuser_id");
+    unBlockUser(userId);
   });
-  $("#deleteCmd").on("click", function () {
+  $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
-          
+    console.log("delete " + userId);
+
     deleteUser(userId);
   });
 }
