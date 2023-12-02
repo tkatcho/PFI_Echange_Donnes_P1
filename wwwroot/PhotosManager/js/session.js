@@ -1,5 +1,5 @@
 function createTimeoutPopup() {
-    $('body').append(`
+  $("body").append(`
         <div class='popup'> 
             <div class='popupContent'>
                 <div>
@@ -14,49 +14,53 @@ function createTimeoutPopup() {
 }
 let currentTimeouID = undefined;
 let initialized = false;
-let timeBeforeRedirect = 5;
+let timeBeforeRedirect = 15;
 let timeoutCallBack = () => {};
 let infinite = -1;
-let timeLeft = 5;
-let maxStallingTime = 5;
+let timeLeft = infinite;
+let maxStallingTime = infinite;
 
 function initTimeout(stallingTime = infinite, callback = timeoutCallBack) {
-    maxStallingTime = stallingTime;
-    timeoutCallBack = callback;
-    createTimeoutPopup();
-    initialized = true;
+  maxStallingTime = stallingTime;
+  timeoutCallBack = callback;
+  createTimeoutPopup();
+  initialized = true;
 }
 function noTimeout() {
-    clearTimeout(currentTimeouID);
+  clearTimeout(currentTimeouID);
+  console.log("stop");
 }
 function timeout() {
-    startCountdown();
+  startCountdown();
 }
 function startCountdown() {
-    if (!initialized) initTimeout();
-    clearTimeout(currentTimeouID);
-    $(".popup").hide();
-    timeLeft = maxStallingTime;
-    if (timeLeft != infinite) {
-        currentTimeouID = setInterval(() => {
-            timeLeft = timeLeft - 1;
-            if (timeLeft > 0) {
-                if (timeLeft <= 10) {
-                    $(".popup").show();
-                    $("#popUpMessage").text("Expiration dans " + timeLeft + " secondes");
-                }
-            } else {
-                $("#popUpMessage").text('Redirection dans ' + (timeBeforeRedirect + timeLeft) + " secondes");
-                if (timeLeft <= -timeBeforeRedirect) {
-                    clearTimeout(currentTimeouID);
-                    closePopup();
-                    timeoutCallBack();
-                }
-            }
-        }, 1000);
-    }
+  if (!initialized) initTimeout();
+  clearTimeout(currentTimeouID);
+  $(".popup").hide();
+  timeLeft = maxStallingTime;
+  if (timeLeft != infinite) {
+    console.log("start");
+    currentTimeouID = setInterval(() => {
+      timeLeft = timeLeft - 1;
+      if (timeLeft > 0) {
+        if (timeLeft <= 10) {
+          $(".popup").show();
+          $("#popUpMessage").text("Expiration dans " + timeLeft + " secondes");
+        }
+      } else {
+        $("#popUpMessage").text(
+          "Redirection dans " + (timeBeforeRedirect + timeLeft) + " secondes"
+        );
+        if (timeLeft <= -timeBeforeRedirect) {
+          clearTimeout(currentTimeouID);
+          closePopup();
+          timeoutCallBack();
+        }
+      }
+    }, 1000);
+  }
 }
 function closePopup() {
-    $(".popup").hide();
-    startCountdown();
-} 
+  $(".popup").hide();
+  startCountdown();
+}

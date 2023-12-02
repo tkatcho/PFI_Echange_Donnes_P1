@@ -2,6 +2,7 @@ let contentScrollPosition = 0;
 let isAdmin = false;
 let isConnected = false;
 let loggedUser;
+let loginMessage = "";
 
 //#region //////////////////////////////////Viewsrendering////////////////////////////////////////////////
 function showWaitingGif() {
@@ -66,7 +67,6 @@ function updateHeader(viewTitle) {
     `;
   }
   $("#header").html(headerContent);
-  renderCmds();
 }
 //#endregion
 
@@ -83,16 +83,28 @@ function renderModifyPersonnage() {}
 
 function logout() {
   API.logout();
+  $(".popup").hide();
 
   isAdmin = false;
   isConnected = false;
   loggedUser = null;
+  renderLogin();
+}
+function timedOut() {
+  API.logout();
+
+  isAdmin = false;
+  isConnected = false;
+  loggedUser = null;
+  $(".popup").hide();
+  loginMessage = "Votre session est expirer! Veuillez vous reconnecter.";
+  renderLogin();
 }
 function renderAbout() {
-  timeout();
   saveContentScrollPosition();
   eraseContent();
   updateHeader("A propos...");
+  timeout();
 
   $("#content").append(
     $(`
@@ -112,21 +124,26 @@ function renderAbout() {
             </div>
         `)
   );
-  dropDownUsers(isAdmin);
+  if (isConnected) {
+    dropDownUsers(isAdmin);
+  } else {
+    dropDownAnonymous();
+  }
 }
 function renderLogin() {
   saveContentScrollPosition();
   eraseContent();
   updateHeader("Connexion");
   dropDownAnonymous();
-  let loginMessage = "";
+  noTimeout();
+
   let Email = "";
   let EmailError = "";
   let passwordError = "";
 
   let loginContent = `
         <div class="content" style="text-align:center">
-            <h3>${loginMessage}</h3>
+            <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
                     RequireMessage = 'Veuillez entrer votre courriel'
@@ -156,15 +173,24 @@ function renderLogin() {
 
     API.login(email, password).then((user) => {
       if (user) {
-        isAdmin =
-          user.Authorizations["readAccess"] === 2 &&
-          user.Authorizations["writeAccess"] === 2;
-        isConnected = true;
-        loggedUser = user;
-        API.storeLoggedUser(user);
-        renderPhotos();
-        dropDownUsers(isAdmin);
-        timeout();
+        if (
+          user.Authorizations["readAccess"] !== -1 &&
+          user.Authorizations["writeAccess"] !== -1
+        ) {
+          isAdmin =
+            user.Authorizations["readAccess"] === 2 &&
+            user.Authorizations["writeAccess"] === 2;
+
+          isConnected = true;
+          loggedUser = user;
+
+          API.storeLoggedUser(user);
+          dropDownUsers(isAdmin);
+          renderPhotos();
+        } else {
+          loginMessage = "Vous etes blocker";
+          renderLogin();
+        }
       } else {
         $("h3").text("Erreur");
       }
@@ -260,13 +286,25 @@ function renderInscription() {
 }
 $(document).ready(function () {
   let user = API.retrieveLoggedUser();
-  if (user != null) {//add: check if blocked
-    isConnected = true;
-    loggedUser = user;
-    isAdmin =
-      user.Authorizations["readAccess"] === 2 &&
-      user.Authorizations["writeAccess"] === 2;
-    renderPhotos();
+  initTimeout(timeBeforeRedirect, timedOut);
+
+  if (user != null) {
+    if (
+      user.Authorizations["readAccess"] !== -1 &&
+      user.Authorizations["writeAccess"] !== -1
+    ) {
+      timeout();
+      //add: check if blocked
+      isConnected = true;
+      loggedUser = user;
+      isAdmin =
+        user.Authorizations["readAccess"] === 2 &&
+        user.Authorizations["writeAccess"] === 2;
+      renderPhotos();
+    } else {
+      renderLogin();
+      loginMessage = "Blocked user";
+    }
   } else {
     renderLogin();
   }
@@ -292,10 +330,10 @@ function dropDownAnonymous() {
   renderCmds();
 }
 function renderGestionPersonnage() {
-  timeout();
   saveContentScrollPosition();
   eraseContent();
   updateHeader("Gestion des usagers");
+  timeout();
 
   API.GetAccounts()
     .then((response) => {
@@ -359,6 +397,9 @@ function renderPhotos() {
   eraseContent();
   updateHeader("Liste de photos");
   dropDownUsers(isAdmin);
+
+  timeout();
+
   let photosContent = `
    <h1> Photos </h1>
 `;
