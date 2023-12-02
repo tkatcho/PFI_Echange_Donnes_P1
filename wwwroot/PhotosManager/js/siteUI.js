@@ -529,7 +529,11 @@ function renderCmds() {
       renderLogin();
     } else renderPhotos();
   });
-
+  $("#listPhotosMenuCmd").on("click", function () {
+    if (!isConnected) {
+      renderLogin();
+    } else renderPhotos();
+  });
   $(".adminCmd").on("click", function () {
     const userId = $(this).attr("adminuser_id");
     addAdmin(userId);
