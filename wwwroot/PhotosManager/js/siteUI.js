@@ -2,8 +2,8 @@ let contentScrollPosition = 0;
 let isAdmin = false;
 let isConnected = false;
 let loggedUser;
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/// Views rendering
+
+//#region //////////////////////////////////Viewsrendering////////////////////////////////////////////////
 function showWaitingGif() {
   eraseContent();
   $("#content").append(
@@ -68,7 +68,26 @@ function updateHeader(viewTitle) {
   $("#header").html(headerContent);
   renderCmds();
 }
+//#endregion
+
 //#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
+
+function addAdmin(userId) {}
+function removeAdmin(id) {}
+function blockUser(userId) {}
+function unBlockUser(id) {}
+function removeUser(userId) {
+  API.unsubscribeAccount(userId);
+}
+function renderModifyPersonnage() {}
+
+function logout() {
+  API.logout();
+
+  isAdmin = false;
+  isConnected = false;
+  loggedUser = null;
+}
 function renderAbout() {
   timeout();
   saveContentScrollPosition();
@@ -142,6 +161,7 @@ function renderLogin() {
           user.Authorizations["writeAccess"] === 2;
         isConnected = true;
         loggedUser = user;
+        API.storeLoggedUser(user);
         renderPhotos();
         dropDownUsers(isAdmin);
         timeout();
@@ -239,18 +259,38 @@ function renderInscription() {
   restoreContentScrollPosition();
 }
 $(document).ready(function () {
-  renderLogin();
+  let user = API.retrieveLoggedUser();
+  if (user != null) {//add: check if blocked
+    isConnected = true;
+    loggedUser = user;
+    isAdmin =
+      user.Authorizations["readAccess"] === 2 &&
+      user.Authorizations["writeAccess"] === 2;
+    renderPhotos();
+  } else {
+    renderLogin();
+  }
 });
 
-function logout() {
-  API.logout();
-  
-  isAdmin = false;
-  isConnected = false;
-  loggedUser = null;
-}
-function renderModifyPersonnage() {}
+function dropDownAnonymous() {
+  let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
+    <i class="cmdIcon fa fa-ellipsis-vertical"></i>
+    </div>
+    <div class="dropdown-menu noselect">
+    <span class="dropdown-item" id="loginCmd">
+    <i class="menuIcon fa fa-sign-in mx-2"></i>
+    Connexion
+    </span>
+    <div class="dropdown-divider"></div>
+    <span class="dropdown-item" id="aboutCmd">
+    <i class="menuIcon fa fa-info-circle mx-2"></i>
+    À propos...
+    </span>
+    </div>`;
 
+  $(".dropdown").html(content);
+  renderCmds();
+}
 function renderGestionPersonnage() {
   timeout();
   saveContentScrollPosition();
@@ -279,7 +319,6 @@ function renderGestionPersonnage() {
       console.error("Error fetching user accounts:", error);
     });
 }
-
 function renderUser(user) {
   let userRank = `<span class="adminCmd fas fa-user-alt dodgerblueCmd" adminuser_id="${user.Id}" title="Ajouter comme admin ${user.Name}"></span>`;
   let userStatus = `<span class="blockCmd fa-regular fa-circle greenCmd" blockuser_id="${user.Id}" title="Blocker ${user.Name}"></span>`;
@@ -427,33 +466,6 @@ function dropDownUsers(isAdmin) {
   $(".dropdown").html(content);
   renderCmds();
 }
-function dropDownAnonymous() {
-  let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
-    <i class="cmdIcon fa fa-ellipsis-vertical"></i>
-    </div>
-    <div class="dropdown-menu noselect">
-    <span class="dropdown-item" id="loginCmd">
-    <i class="menuIcon fa fa-sign-in mx-2"></i>
-    Connexion
-    </span>
-    <div class="dropdown-divider"></div>
-    <span class="dropdown-item" id="aboutCmd">
-    <i class="menuIcon fa fa-info-circle mx-2"></i>
-    À propos...
-    </span>
-    </div>`;
-
-  $(".dropdown").html(content);
-  renderCmds();
-}
-function addAdmin(userId) {}
-function removeAdmin(id) {}
-function blockUser(userId) {}
-function unBlockUser(id) {}
-function removeUser(userId) {
-  API.unsubscribeAccount(userId);
-}
-
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
     renderAbout();
@@ -495,7 +507,6 @@ function renderCmds() {
   });
   $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
-
     removeUser(userId);
   });
 }
