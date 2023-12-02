@@ -244,6 +244,7 @@ $(document).ready(function () {
 
 function logout() {
   API.logout();
+  
   isAdmin = false;
   isConnected = false;
   loggedUser = null;
@@ -265,13 +266,11 @@ function renderGestionPersonnage() {
             $("#content").append(renderUser(user));
           });
           restoreContentScrollPosition();
-          renderCmds();
         } else {
           console.error("Error: No user accounts found.");
         }
 
         dropDownUsers(isAdmin);
-        renderCmds();
       } else {
         console.error("Error: Unexpected API response format.");
       }
@@ -279,7 +278,6 @@ function renderGestionPersonnage() {
     .catch((error) => {
       console.error("Error fetching user accounts:", error);
     });
-  renderCmds();
 }
 
 function renderUser(user) {
@@ -452,7 +450,9 @@ function addAdmin(userId) {}
 function removeAdmin(id) {}
 function blockUser(userId) {}
 function unBlockUser(id) {}
-function removeUser(userId) {}
+function removeUser(userId) {
+  API.unsubscribeAccount(userId);
+}
 
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
@@ -496,7 +496,7 @@ function renderCmds() {
   $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
 
-    deleteUser(userId);
+    removeUser(userId);
   });
 }
 //#endregion
