@@ -92,6 +92,7 @@ class API {
                     API.storeLoggedUser(token.User);
                     resolve(token.User);
                 },
+                
                 error: xhr => { API.setHttpErrorState(xhr); resolve(false); }
             });
         });

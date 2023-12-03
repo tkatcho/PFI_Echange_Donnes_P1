@@ -3,6 +3,7 @@ let isAdmin = false;
 let isConnected = false;
 let loggedUser;
 let loginMessage = "";
+let accountCreationSuccess = false;
 
 //#region //////////////////////////////////Viewsrendering////////////////////////////////////////////////
 function showWaitingGif() {
@@ -130,30 +131,21 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Connexion");
-  dropDownAnonymous();
-  noTimeout();
+function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordError = '') {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader('Connexion');
+   // noTimeout(); 
 
-  let Email = "";
-  let EmailError = "";
-  let passwordError = "";
-
-  let loginContent = `
+    let loginContent = `
         <div class="content" style="text-align:center">
             <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre courriel'
-                    InvalidMessage = 'Courriel invalide'
-                    placeholder="adresse de courriel"
-                    value='${Email}'>
+                    placeholder="adresse de courriel" value='${Email}'>
                 <span style='color:red'>${EmailError}</span>
                 <input type='password' name='Password' placeholder='Mot de passe'
-                    class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre mot de passe'>
+                    class="form-control" required>
                 <span style='color:red'>${passwordError}</span>
                 <input type='submit' name='submit' value="Entrer" class="form-control btn-primary">
             </form>
@@ -164,12 +156,13 @@ function renderLogin() {
         </div>
     `;
 
-  $("#content").append($(loginContent));
 
-  $("#loginForm").on("submit", function (e) {
-    e.preventDefault();
-    let email = $("input[name='Email']").val();
-    let password = $("input[name='Password']").val();
+    $("#content").append($(loginContent));
+
+    $("#loginForm").on('submit', function(e) {
+        e.preventDefault();
+        let email = $("input[name='Email']").val();
+        let password = $("input[name='Password']").val();
 
     API.login(email, password).then((user) => {
       if (user) {
@@ -191,123 +184,146 @@ function renderLogin() {
           loginMessage = "Vous etes blocker";
           renderLogin();
         }
-      } else {
-        $("h3").text("Erreur");
-      }
+      } 
+      else 
+      {
+        if(API.currentStatus == 482) {
+            renderLogin("Mot de passe incorrect", email);
+        } else if(API.currentStatus == 481) {
+            renderLogin("Courriel introuvable", '', '', '');
+        } else {
+            renderLogin("Le serveur ne repond pas");
+        }
+    }
     });
   });
 
-  $("#createProfilCmd").on("click", function () {
-    renderInscription();
-  });
-
-  restoreContentScrollPosition();
+    $("#createProfilCmd").on('click', function() {
+        renderInscription(); 
+    });
+    if(loginMessage !== '') {
+        let confirmationDiv = `<div class="confirmation-message">${loginMessage}</div>`;
+        $("#content").prepend(confirmationDiv);
+    }
+    restoreContentScrollPosition();
+    
 }
 function renderInscription() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Inscription");
-
-  let registerContent = `
-    <form class="form" id="createProfilForm"'>
+    noTimeout();
+    eraseContent(); 
+    updateHeader("Inscription");
+    $("#newPhotoCmd").hide(); 
+    $("#content").append(`
+    <form class="form" id="createProfilForm">
     <fieldset>
-    <legend>Adresse ce courriel</legend>
-    <input type="email"
-    class="form-control Email"
-    name="Email"
-    id="Email"
-    placeholder="Courriel"
-    required
-    RequireMessage = 'Veuillez entrer votre courriel'
-    InvalidMessage = 'Courriel invalide'
-    CustomErrorMessage ="Ce courriel est déjà utilisé"/>
-    <input class="form-control MatchedInput"
-    type="text"
-    matchedInputId="Email"
-    name="matchedEmail"
-    id="matchedEmail"
-    placeholder="Vérification"
-    required
-    RequireMessage = 'Veuillez entrez de nouveau votre courriel'
-    InvalidMessage="Les courriels ne correspondent pas" />
+        <legend>Adresse courriel</legend>
+        <input type="email" class="form-control Email" name="Email" id="Email" placeholder="Courriel" required RequireMessage='Veuillez entrer votre courriel' InvalidMessage='Courriel invalide' CustomErrorMessage="Ce courriel est déjà utilisé"/>
+        <input class="form-control MatchedInput" type="text" matchedInputId="Email" name="matchedEmail" id="matchedEmail" placeholder="Vérification" required RequireMessage='Veuillez entrez de nouveau votre courriel' InvalidMessage="Les courriels ne correspondent pas" />
     </fieldset>
     <fieldset>
-    <legend>Mot de passe</legend>
-    <input type="password"
-    class="form-control"
-    name="Password"
-    id="Password"
-    placeholder="Mot de passe"
-    required
-    RequireMessage = 'Veuillez entrer un mot de passe'
-    InvalidMessage = 'Mot de passe trop court'/>
-    <input class="form-control MatchedInput"
-    type="password"
-    matchedInputId="Password"
-    name="matchedPassword"
-    id="matchedPassword"
-    placeholder="Vérification" required
-    InvalidMessage="Ne correspond pas au mot de passe" />
+        <legend>Mot de passe</legend>
+        <input type="password" class="form-control" name="Password" id="Password" placeholder="Mot de passe" required RequireMessage='Veuillez entrer un mot de passe' InvalidMessage='Mot de passe trop court'/>
+        <input class="form-control MatchedInput" type="password" matchedInputId="Password" name="matchedPassword" id="matchedPassword" placeholder="Vérification" required InvalidMessage="Ne correspond pas au mot de passe" />
     </fieldset>
     <fieldset>
-    <legend>Nom</legend>
-    <input type="text"
-    class="form-control Alpha"
-    name="Name"
-    id="Name"
-    placeholder="Nom"
-    required
-    RequireMessage = 'Veuillez entrer votre nom'
-    InvalidMessage = 'Nom invalide'/>
+        <legend>Nom</legend>
+        <input type="text" class="form-control Alpha" name="Name" id="Name" placeholder="Nom" required RequireMessage='Veuillez entrer votre nom' InvalidMessage='Nom invalide'/>
     </fieldset>
     <fieldset>
-    <legend>Avatar</legend>
-    <div class='imageUploader'
-    newImage='true'
-    controlId='Avatar'
-    imageSrc='images/no-avatar.png'
-    waitingImage="images/Loading_icon.gif">
-    </div>
+        <legend>Avatar</legend>
+        <div class='imageUploader' newImage='true' controlId='Avatar' imageSrc='images/no-avatar.png' waitingImage="images/Loading_icon.gif"></div>
     </fieldset>
     <input type='submit' name='submit' id='saveUserCmd' value="Enregistrer" class="form-control btn-primary">
-    </form>
-    <div class="cancel">
+</form>
+<div class="cancel">
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
-    </div>`;
+</div>`);
+    $('#loginCmd').on('click',  function() {
+        renderLogin(); 
+    });  
+    initFormValidation();
+    initImageUploaders();
+    $('#abortCmd').on('click', function() {
+        renderLogin(); 
+    }); 
+    addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
 
-  $("#content").append($(registerContent));
-
-  $("#createProfilCmd").on("click", function () {});
-  $("#abortCmd").on("click", function () {
-    renderLogin();
-  });
-
-  restoreContentScrollPosition();
-}
-$(document).ready(function () {
-  let user = API.retrieveLoggedUser();
-  initTimeout(timeBeforeRedirect, timedOut);
-
-  if (user != null) {
-    if (
-      user.Authorizations["readAccess"] !== -1 &&
-      user.Authorizations["writeAccess"] !== -1
-    ) {
-      timeout();
-      //add: check if blocked
-      isConnected = true;
-      loggedUser = user;
-      isAdmin =
-        user.Authorizations["readAccess"] === 2 &&
-        user.Authorizations["writeAccess"] === 2;
-      renderPhotos();
-    } else {
-      renderLogin();
-      loginMessage = "Blocked user";
+    $('#createProfilForm').on("submit", function (event) {
+        event.preventDefault();
+        let profil = getFormData($('#createProfilForm'));
+        delete profil.matchedPassword;
+        delete profil.matchedEmail;
+    
+        createProfil(profil, function() {
+            const confirmationMessage = "Votre compte a été créé. Veuillez vérifier vos courriels pour le code de vérification.";
+            renderLogin(confirmationMessage); 
+        });
+    });
+    
     }
-  } else {
-    renderLogin();
-  }
+
+    function getFormData($form) {
+        let unindexedArray = $form.serializeArray();
+        let indexedArray = {};
+    
+        $.map(unindexedArray, function(n, i) {
+            indexedArray[n['name']] = n['value'];
+        });
+    
+        return indexedArray;
+    }
+    function createProfil(profilData, onSuccess) {
+        showWaitingGif(); 
+        
+        API.register(profilData).then(response => {
+            if (response) {
+                console.log("Profil créé avec succès", response);
+                if(onSuccess) onSuccess();
+            } else {
+                console.error("Erreur lors de la création du profil", API.currentHttpError);
+            }
+        }).finally(() => {
+            // Hide the waiting GIF or other cleanup actions
+        });
+    }
+    
+    
+        
+
+
+
+
+$(document).ready(function () {
+    console.log("Page loaded or reloaded");
+
+    initTimeout(timeBeforeRedirect, timedOut);
+    if (accountCreationSuccess) {
+        accountCreationSuccess = false;
+    }
+    else {
+        let user = API.retrieveLoggedUser();
+
+        if (user != null) {
+            if (
+                user.Authorizations["readAccess"] !== -1 &&
+                user.Authorizations["writeAccess"] !== -1
+            ) {
+                timeout();
+                //add: check if blocked
+                isConnected = true;
+                loggedUser = user;
+                isAdmin =
+                    user.Authorizations["readAccess"] === 2 &&
+                    user.Authorizations["writeAccess"] === 2;
+                renderPhotos();
+            } else {
+                renderLogin();
+                loginMessage = "Blocked user";
+            }
+        } else {
+            renderLogin();
+        }
+    }
 });
 
 function dropDownAnonymous() {
@@ -331,7 +347,7 @@ function dropDownAnonymous() {
 }
 function renderGestionPersonnage() {
   saveContentScrollPosition();
-  eraseContent();
+  eraseContent();z
   updateHeader("Gestion des usagers");
   timeout();
 
