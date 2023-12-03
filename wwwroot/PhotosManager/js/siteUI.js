@@ -518,52 +518,64 @@ function dropDownUsers(isAdmin) {
 }
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
+    showWaitingGif();
     renderAbout();
   });
   $("#loginCmd").on("click", function () {
+    showWaitingGif();
     renderLogin();
   });
   $("#manageUserCm").on("click", function () {
+    showWaitingGif();
     renderGestionPersonnage();
   });
   $("#editProfilMenuCmd").on("click", function () {
+    showWaitingGif();
     renderModifyPersonnage();
   });
   $("#logoutCmd").on("click", function () {
+    showWaitingGif();
     logout();
     renderLogin();
   });
   $("#listPhotosCmd").on("click", function () {
+    showWaitingGif();
     if (!isConnected) {
       renderLogin();
     } else renderPhotos();
   });
   $("#listPhotosMenuCmd").on("click", function () {
+    showWaitingGif();
     if (!isConnected) {
       renderLogin();
     } else renderPhotos();
   });
   $(".adminCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("adminuser_id");
     API.admin(userId);
     renderGestionPersonnage();
   });
   $(".unAdminCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("unadminuser_id");
     API.unadmin(userId);
     renderGestionPersonnage();
   });
   $(".blockCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("blockuser_id");
     API.block(userId);
     renderGestionPersonnage();
   });
   $(".unBlockCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("unblockuser_id");
     API.unblock(userId);
     renderGestionPersonnage();
   });
   $(".deleteCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("deleteuser_id");
     API.unsubscribeAccount(userId);
     renderGestionPersonnage();
