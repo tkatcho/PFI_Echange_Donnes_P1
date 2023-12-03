@@ -62,6 +62,8 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -100,6 +102,8 @@ class API {
           resolve(token.User);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -125,7 +129,7 @@ class API {
       });
     });
   }
-  static admin(id){
+  static admin(id) {
     API.initHttpState();
     return new Promise((resolve) => {
       $.ajax({
@@ -138,13 +142,15 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
       });
     });
   }
-  static unadmin(id){
+  static unadmin(id) {
     API.initHttpState();
     return new Promise((resolve) => {
       $.ajax({
@@ -157,6 +163,8 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -176,6 +184,8 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -195,6 +205,8 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -236,6 +248,8 @@ class API {
           resolve(true);
         },
         error: (xhr) => {
+          loginMessage = "server error";
+          logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
@@ -256,6 +270,9 @@ class API {
         },
         error: (xhr) => {
           API.setHttpErrorState(xhr);
+          loginMessage = "server error";
+          logout();
+
           resolve(false);
         },
       });

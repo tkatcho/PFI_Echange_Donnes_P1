@@ -82,6 +82,7 @@ function logout() {
   isConnected = false;
   loggedUser = null;
   renderLogin();
+  loginMessage = "";
 }
 function timedOut() {
   API.logout();
@@ -303,11 +304,12 @@ $(document).ready(function () {
 
 setInterval(() => {
   let user = API.retrieveLoggedUser();
-
+  console.log("tour");
+  console.log(user.Authorizations);
   if (user != null) {
     if (
-      user.Authorizations["readAccess"] !== -1 &&
-      user.Authorizations["writeAccess"] !== -1
+      user.Authorizations["readAccess"] === -1 &&
+      user.Authorizations["writeAccess"] === -1
     ) {
       renderLogin();
       loginMessage = "You have been blocked";
