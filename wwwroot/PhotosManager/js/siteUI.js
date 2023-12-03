@@ -279,7 +279,7 @@ function renderInscription() {
 }
 $(document).ready(function () {
   let user = API.retrieveLoggedUser();
-  //initTimeout(timeBeforeRedirect, timedOut);
+  initTimeout(timeBeforeRedirect, timedOut);
 
   if (user != null) {
     if (
