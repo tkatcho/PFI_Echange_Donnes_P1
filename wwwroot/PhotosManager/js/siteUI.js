@@ -72,21 +72,6 @@ function updateHeader(viewTitle) {
 
 //#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
 
-function addAdmin(userId) {
-  API.admin(userId);
-}
-function removeAdmin(id) {
-  API.unadmin(id);
-}
-function blockUser(userId) {
-  API.block(userId);
-}
-function unBlockUser(id) {
-  API.unblock(id);
-}
-function removeUser(userId) {
-  API.unsubscribeAccount(userId);
-}
 function renderModifyPersonnage() {}
 
 function logout() {
@@ -301,7 +286,6 @@ $(document).ready(function () {
       user.Authorizations["writeAccess"] !== -1
     ) {
       timeout();
-      //add: check if blocked
       isConnected = true;
       loggedUser = user;
       isAdmin =
@@ -316,6 +300,20 @@ $(document).ready(function () {
     renderLogin();
   }
 });
+
+setInterval(() => {
+  let user = API.retrieveLoggedUser();
+
+  if (user != null) {
+    if (
+      user.Authorizations["readAccess"] !== -1 &&
+      user.Authorizations["writeAccess"] !== -1
+    ) {
+      renderLogin();
+      loginMessage = "You have been blocked";
+    }
+  }
+}, 1000);
 
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
@@ -545,27 +543,28 @@ function renderCmds() {
   });
   $(".adminCmd").on("click", function () {
     const userId = $(this).attr("adminuser_id");
-    addAdmin(userId);
+    API.admin(userId);
     renderGestionPersonnage();
   });
   $(".unAdminCmd").on("click", function () {
     const userId = $(this).attr("unadminuser_id");
-    removeAdmin(userId);
+    API.unadmin(userId);
     renderGestionPersonnage();
   });
   $(".blockCmd").on("click", function () {
     const userId = $(this).attr("blockuser_id");
-    blockUser(userId);
+    API.block(userId);
     renderGestionPersonnage();
   });
   $(".unBlockCmd").on("click", function () {
     const userId = $(this).attr("unblockuser_id");
-    unBlockUser(userId);
+    API.unblock(userId);
     renderGestionPersonnage();
   });
   $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
-    removeUser(userId);
+    API.unsubscribeAccount(userId);
+    renderGestionPersonnage();
   });
 }
 //#endregion
