@@ -6,15 +6,20 @@
 /////////////////////////////////////////////////////////////////////
 
 import APIServer from "./APIServer.js";
-import RouteRegister from './routeRegister.js';
+import RouteRegister from "./routeRegister.js";
 
-RouteRegister.add('GET', 'accounts');
-RouteRegister.add('POST', 'accounts', 'register');
-RouteRegister.add('GET', 'accounts', 'verify');
-RouteRegister.add('GET', 'accounts', 'logout');
-RouteRegister.add('PUT', 'accounts', 'modify');
-RouteRegister.add('GET', 'accounts', 'remove');
-RouteRegister.add('GET', 'accounts', 'conflict');
+RouteRegister.add("GET", "accounts");
+RouteRegister.add("POST", "accounts", "register");
+RouteRegister.add("GET", "accounts", "verify");
+RouteRegister.add("GET", "accounts", "logout");
+RouteRegister.add("PUT", "accounts", "modify");
+RouteRegister.add("GET", "accounts", "remove");
+RouteRegister.add("GET", "accounts", "conflict");
+
+RouteRegister.add("PUT", "accounts", "admin");
+RouteRegister.add("PUT", "accounts", "unadmin");
+RouteRegister.add("PUT", "accounts", "block");
+RouteRegister.add("PUT", "accounts", "unblock");
 
 let server = new APIServer();
 server.start();

@@ -73,13 +73,6 @@ function updateHeader(viewTitle) {
 
 //#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
 
-function addAdmin(userId) {}
-function removeAdmin(id) {}
-function blockUser(userId) {}
-function unBlockUser(id) {}
-function removeUser(userId) {
-  API.unsubscribeAccount(userId);
-}
 function renderModifyPersonnage() {}
 
 function logout() {
@@ -90,6 +83,7 @@ function logout() {
   isConnected = false;
   loggedUser = null;
   renderLogin();
+  loginMessage = "";
 }
 function timedOut() {
   API.logout();
@@ -176,7 +170,6 @@ function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordErr
 
           isConnected = true;
           loggedUser = user;
-
           API.storeLoggedUser(user);
           dropDownUsers(isAdmin);
           renderPhotos();
@@ -303,28 +296,41 @@ $(document).ready(function () {
     else {
         let user = API.retrieveLoggedUser();
 
-        if (user != null) {
-            if (
-                user.Authorizations["readAccess"] !== -1 &&
-                user.Authorizations["writeAccess"] !== -1
-            ) {
-                timeout();
-                //add: check if blocked
-                isConnected = true;
-                loggedUser = user;
-                isAdmin =
-                    user.Authorizations["readAccess"] === 2 &&
-                    user.Authorizations["writeAccess"] === 2;
-                renderPhotos();
-            } else {
-                renderLogin();
-                loginMessage = "Blocked user";
-            }
-        } else {
-            renderLogin();
-        }
+  if (user != null) {
+    if (
+      user.Authorizations["readAccess"] !== -1 &&
+      user.Authorizations["writeAccess"] !== -1
+    ) {
+      timeout();
+      isConnected = true;
+      loggedUser = user;
+      isAdmin =
+        user.Authorizations["readAccess"] === 2 &&
+        user.Authorizations["writeAccess"] === 2;
+      renderPhotos();
+    } else {
+      renderLogin();
+      loginMessage = "Blocked user";
     }
+  } else {
+    renderLogin();
+  }
 });
+
+setInterval(() => {
+  let user = API.retrieveLoggedUser();
+  console.log("tour");
+  console.log(user.Authorizations);
+  if (user != null) {
+    if (
+      user.Authorizations["readAccess"] === -1 &&
+      user.Authorizations["writeAccess"] === -1
+    ) {
+      renderLogin();
+      loginMessage = "You have been blocked";
+    }
+  }
+}, 1000);
 
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
@@ -357,7 +363,9 @@ function renderGestionPersonnage() {
         const users = response.data;
         if (users.length > 0) {
           users.forEach((user) => {
-            $("#content").append(renderUser(user));
+            if (user.Id != loggedUser.Id) {
+              $("#content").append(renderUser(user));
+            }
           });
           restoreContentScrollPosition();
         } else {
@@ -525,50 +533,67 @@ function dropDownUsers(isAdmin) {
 }
 function renderCmds() {
   $("#aboutCmd").on("click", function () {
+    showWaitingGif();
     renderAbout();
   });
   $("#loginCmd").on("click", function () {
+    showWaitingGif();
     renderLogin();
   });
   $("#manageUserCm").on("click", function () {
+    showWaitingGif();
     renderGestionPersonnage();
   });
   $("#editProfilMenuCmd").on("click", function () {
+    showWaitingGif();
     renderModifyPersonnage();
   });
   $("#logoutCmd").on("click", function () {
+    showWaitingGif();
     logout();
     renderLogin();
   });
   $("#listPhotosCmd").on("click", function () {
+    showWaitingGif();
     if (!isConnected) {
       renderLogin();
     } else renderPhotos();
   });
   $("#listPhotosMenuCmd").on("click", function () {
+    showWaitingGif();
     if (!isConnected) {
       renderLogin();
     } else renderPhotos();
   });
   $(".adminCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("adminuser_id");
-    addAdmin(userId);
+    API.admin(userId);
+    renderGestionPersonnage();
   });
   $(".unAdminCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("unadminuser_id");
-    removeAdmin(userId);
+    API.unadmin(userId);
+    renderGestionPersonnage();
   });
   $(".blockCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("blockuser_id");
-    blockUser(userId);
+    API.block(userId);
+    renderGestionPersonnage();
   });
   $(".unBlockCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("unblockuser_id");
-    unBlockUser(userId);
+    API.unblock(userId);
+    renderGestionPersonnage();
   });
   $(".deleteCmd").on("click", function () {
+    showWaitingGif();
     const userId = $(this).attr("deleteuser_id");
-    removeUser(userId);
+    API.unsubscribeAccount(userId);
+    renderGestionPersonnage();
   });
 }
 //#endregion

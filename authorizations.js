@@ -17,6 +17,10 @@ export default class Authorizations {
     static admin() {
         return { readAccess: 2, writeAccess: 2 };
     }
+    static blocked(){
+        return { readAccess: -1, writeAccess: -1 };
+
+    }
     static granted(HttpContext, authorizations) {
         if (authorizations) {
             if (authorizations.readAccess == 0 && authorizations.writeAccess == 0) return true;
