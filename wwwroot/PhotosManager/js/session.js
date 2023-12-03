@@ -28,7 +28,6 @@ function initTimeout(stallingTime = infinite, callback = timeoutCallBack) {
 }
 function noTimeout() {
   clearTimeout(currentTimeouID);
-  console.log("stop");
 }
 function timeout() {
   startCountdown();
@@ -39,7 +38,6 @@ function startCountdown() {
   $(".popup").hide();
   timeLeft = maxStallingTime;
   if (timeLeft != infinite) {
-    console.log("start");
     currentTimeouID = setInterval(() => {
       timeLeft = timeLeft - 1;
       if (timeLeft > 0) {

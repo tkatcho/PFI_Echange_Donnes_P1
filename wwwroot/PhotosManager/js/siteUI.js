@@ -72,10 +72,18 @@ function updateHeader(viewTitle) {
 
 //#region //////////////////////////////////renders///////////////////////////////////////////////////////////////
 
-function addAdmin(userId) {}
-function removeAdmin(id) {}
-function blockUser(userId) {}
-function unBlockUser(id) {}
+function addAdmin(userId) {
+  API.admin(userId);
+}
+function removeAdmin(id) {
+  API.unadmin(id);
+}
+function blockUser(userId) {
+  API.block(userId);
+}
+function unBlockUser(id) {
+  API.unblock(id);
+}
 function removeUser(userId) {
   API.unsubscribeAccount(userId);
 }
@@ -183,7 +191,6 @@ function renderLogin() {
 
           isConnected = true;
           loggedUser = user;
-
           API.storeLoggedUser(user);
           dropDownUsers(isAdmin);
           renderPhotos();
@@ -286,7 +293,7 @@ function renderInscription() {
 }
 $(document).ready(function () {
   let user = API.retrieveLoggedUser();
-  initTimeout(timeBeforeRedirect, timedOut);
+  //initTimeout(timeBeforeRedirect, timedOut);
 
   if (user != null) {
     if (
@@ -341,7 +348,9 @@ function renderGestionPersonnage() {
         const users = response.data;
         if (users.length > 0) {
           users.forEach((user) => {
-            $("#content").append(renderUser(user));
+            if (user.Id != loggedUser.Id) {
+              $("#content").append(renderUser(user));
+            }
           });
           restoreContentScrollPosition();
         } else {
@@ -537,18 +546,22 @@ function renderCmds() {
   $(".adminCmd").on("click", function () {
     const userId = $(this).attr("adminuser_id");
     addAdmin(userId);
+    renderGestionPersonnage();
   });
   $(".unAdminCmd").on("click", function () {
     const userId = $(this).attr("unadminuser_id");
     removeAdmin(userId);
+    renderGestionPersonnage();
   });
   $(".blockCmd").on("click", function () {
     const userId = $(this).attr("blockuser_id");
     blockUser(userId);
+    renderGestionPersonnage();
   });
   $(".unBlockCmd").on("click", function () {
     const userId = $(this).attr("unblockuser_id");
     unBlockUser(userId);
+    renderGestionPersonnage();
   });
   $(".deleteCmd").on("click", function () {
     const userId = $(this).attr("deleteuser_id");
