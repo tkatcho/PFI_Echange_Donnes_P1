@@ -3,6 +3,7 @@ let isAdmin = false;
 let isConnected = false;
 let loggedUser;
 let loginMessage = "";
+let accountCreationSuccess = false;
 
 //#region //////////////////////////////////Viewsrendering////////////////////////////////////////////////
 function showWaitingGif() {
@@ -49,7 +50,30 @@ function updateHeader(viewTitle) {
   </div>
 </div>
   `;
-  } else {
+  } else if(isConnected && title == "Profil"){
+    headerContent = `
+    <span title="Profil" id="listPhotosCmd">
+  <img src="images/PhotoCloudLogo.png" class="appLogo">
+</span>
+
+<span class="viewTitle">${title}
+  <div class="cmdIcon fa fa-plus" id="newPhotoCmd" title="Ajouter une photo"></div>
+</span>
+
+<div class="headerMenusContainer">
+  <span>&nbsp;</span>
+  <i title="Modifier votre profil">
+    <div class="UserAvatarSmall" userid="${loggedUser.Id}" id="editProfilCmd"
+      style="background-image:url('${loggedUser.Avatar}')"
+      title="Nicolas Chourot"></div>
+  </i>
+
+  <div class="dropdown ms-auto dropdownLayout">
+    <!-- Your dropdown content goes here -->
+  </div>
+</div> `
+  }
+  else {
     headerContent = `
       <span title="Liste des photos" id="listPhotosCmd">
         <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -124,30 +148,24 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Connexion");
-  dropDownAnonymous();
-  noTimeout();
+function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', passwordError = '') {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader('Connexion');
+    noTimeout();
 
-  let Email = "";
-  let EmailError = "";
-  let passwordError = "";
+    restoreContentScrollPosition();
 
-  let loginContent = `
+    let loginContent = `
         <div class="content" style="text-align:center">
+        <h3>${created}</h3>
             <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre courriel'
-                    InvalidMessage = 'Courriel invalide'
-                    placeholder="adresse de courriel"
-                    value='${Email}'>
+                    placeholder="adresse de courriel" value='${Email}'>
                 <span style='color:red'>${EmailError}</span>
                 <input type='password' name='Password' placeholder='Mot de passe'
-                    class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre mot de passe'>
+                    class="form-control" required>
                 <span style='color:red'>${passwordError}</span>
                 <input type='submit' name='submit' value="Entrer" class="form-control btn-primary">
             </form>
@@ -158,15 +176,16 @@ function renderLogin() {
         </div>
     `;
 
-  $("#content").append($(loginContent));
 
-  $("#loginForm").on("submit", function (e) {
-    e.preventDefault();
-    let email = $("input[name='Email']").val();
-    let password = $("input[name='Password']").val();
+    $("#content").append($(loginContent));
+
+    $("#loginForm").on('submit', function (e) {
+        e.preventDefault();
+        let email = $("input[name='Email']").val();
+        let password = $("input[name='Password']").val();
 
     API.login(email, password).then((user) => {
-      if (user != undefined) {
+      if (user) {
         if (
           user.Authorizations["readAccess"] !== -1 &&
           user.Authorizations["writeAccess"] !== -1
@@ -177,93 +196,58 @@ function renderLogin() {
 
           isConnected = true;
           loggedUser = user;
+          API.storeLoggedUser(user);
           dropDownUsers(isAdmin);
           renderPhotos();
         } else {
           loginMessage = "Vous etes blocker";
-          logout();
+          renderLogin();
         }
       } else {
-        $("h3").text("not found");
+        $("h3").text("Erreur");
       }
     });
   });
 
-  $("#createProfilCmd").on("click", function () {
-    renderInscription();
-  });
+    $("#createProfilCmd").on('click', function () {
+        renderInscription();
+    });
 
-  restoreContentScrollPosition();
+    restoreContentScrollPosition();
+
+}
+
+function updateLoginMessage(message) {
+    $(".loginMessage").text(message);
 }
 function renderInscription() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Inscription");
-
-  let registerContent = `
-    <form class="form" id="createProfilForm"'>
+    noTimeout();
+    eraseContent(); 
+    updateHeader("Inscription");
+    $("#newPhotoCmd").hide(); 
+    $("#content").append(`
+    <form class="form" id="createProfilForm">
     <fieldset>
-    <legend>Adresse ce courriel</legend>
-    <input type="email"
-    class="form-control Email"
-    name="Email"
-    id="Email"
-    placeholder="Courriel"
-    required
-    RequireMessage = 'Veuillez entrer votre courriel'
-    InvalidMessage = 'Courriel invalide'
-    CustomErrorMessage ="Ce courriel est déjà utilisé"/>
-    <input class="form-control MatchedInput"
-    type="text"
-    matchedInputId="Email"
-    name="matchedEmail"
-    id="matchedEmail"
-    placeholder="Vérification"
-    required
-    RequireMessage = 'Veuillez entrez de nouveau votre courriel'
-    InvalidMessage="Les courriels ne correspondent pas" />
+        <legend>Adresse courriel</legend>
+        <input type="email" class="form-control Email" name="Email" id="Email" placeholder="Courriel" required RequireMessage='Veuillez entrer votre courriel' InvalidMessage='Courriel invalide' CustomErrorMessage="Ce courriel est déjà utilisé"/>
+        <input class="form-control MatchedInput" type="text" matchedInputId="Email" name="matchedEmail" id="matchedEmail" placeholder="Vérification" required RequireMessage='Veuillez entrez de nouveau votre courriel' InvalidMessage="Les courriels ne correspondent pas" />
     </fieldset>
     <fieldset>
-    <legend>Mot de passe</legend>
-    <input type="password"
-    class="form-control"
-    name="Password"
-    id="Password"
-    placeholder="Mot de passe"
-    required
-    RequireMessage = 'Veuillez entrer un mot de passe'
-    InvalidMessage = 'Mot de passe trop court'/>
-    <input class="form-control MatchedInput"
-    type="password"
-    matchedInputId="Password"
-    name="matchedPassword"
-    id="matchedPassword"
-    placeholder="Vérification" required
-    InvalidMessage="Ne correspond pas au mot de passe" />
+        <legend>Mot de passe</legend>
+        <input type="password" class="form-control" name="Password" id="Password" placeholder="Mot de passe" required RequireMessage='Veuillez entrer un mot de passe' InvalidMessage='Mot de passe trop court'/>
+        <input class="form-control MatchedInput" type="password" matchedInputId="Password" name="matchedPassword" id="matchedPassword" placeholder="Vérification" required InvalidMessage="Ne correspond pas au mot de passe" />
     </fieldset>
     <fieldset>
-    <legend>Nom</legend>
-    <input type="text"
-    class="form-control Alpha"
-    name="Name"
-    id="Name"
-    placeholder="Nom"
-    required
-    RequireMessage = 'Veuillez entrer votre nom'
-    InvalidMessage = 'Nom invalide'/>
+        <legend>Nom</legend>
+        <input type="text" class="form-control Alpha" name="Name" id="Name" placeholder="Nom" required RequireMessage='Veuillez entrer votre nom' InvalidMessage='Nom invalide'/>
     </fieldset>
     <fieldset>
-    <legend>Avatar</legend>
-    <div class='imageUploader'
-    newImage='true'
-    controlId='Avatar'
-    imageSrc='images/no-avatar.png'
-    waitingImage="images/Loading_icon.gif">
-    </div>
+        <legend>Avatar</legend>
+        <div class='imageUploader' newImage='true' controlId='Avatar' imageSrc='images/no-avatar.png' waitingImage="images/Loading_icon.gif"></div>
     </fieldset>
     <input type='submit' name='submit' id='saveUserCmd' value="Enregistrer" class="form-control btn-primary">
-    </form>
-    <div class="cancel">
+</form>
+<div class="cancel">
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
     </div>`;
 
@@ -293,7 +277,7 @@ $(document).ready(function () {
         user.Authorizations["writeAccess"] === 2;
       renderPhotos();
     } else {
-      logout();
+      renderLogin();
       loginMessage = "Blocked user";
     }
   } else {
@@ -335,7 +319,7 @@ function dropDownAnonymous() {
 }
 function renderGestionPersonnage() {
   saveContentScrollPosition();
-  eraseContent();
+  eraseContent();z
   updateHeader("Gestion des usagers");
   timeout();
 
@@ -412,6 +396,7 @@ function renderPhotos() {
 
   $("#content").append($(photosContent));
 }
+
 function dropDownUsers(isAdmin) {
   let content;
   if (isAdmin) {
@@ -577,4 +562,158 @@ function renderCmds() {
     renderGestionPersonnage();
   });
 }
+
+function renderEmailVerification() {
+    eraseContent();
+    updateHeader("Verification");
+    let verificationContent = `
+        <div class="content" style="text-align:center">
+            <h3>Veuillez entrer le code de verification que vous avez recu par courriel</h3>
+            <form class="form" id="verificationForm">
+                <input type='text' name='verifyCode' class="form-control" required 
+                    placeholder="Verification Code">
+                <input type='submit' name='submit' value="Verify" class="form-control btn-primary">
+            </form>
+        </div>
+    `;
+    $("#content").append($(verificationContent));
+
+    $("#verificationForm").on('submit', function(e) {
+        e.preventDefault();
+        let verifyCode = $("input[name='verifyCode']").val();
+        API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
+            if (isValid) {
+                renderLogin();
+            } else {
+                renderEmailVerification();
+            }
+        });
+    });
+}
+
+    function renderModifyPersonnage() {
+        saveContentScrollPosition();
+        eraseContent();
+        updateHeader("Profil");
+
+        let modifierProfilContent = `
+            <form class="form" id="editProfilForm">
+                <input type="hidden" name="Id" id="Id" value="${loggedUser.Id}"/>
+                <fieldset>
+                    <legend>Adresse ce courriel</legend>
+                    <input type="email" class="form-control Email" name="Email" id="Email" placeholder="Courriel" required RequireMessage='Veuillez entrer votre courriel' InvalidMessage='Courriel invalide' CustomErrorMessage="Ce courriel est déjà utilisé" value="${loggedUser.Email}">
+                    <input class="form-control MatchedInput" type="text" matchedInputId="Email" name="matchedEmail" id="matchedEmail" placeholder="Vérification" required RequireMessage='Veuillez entrez de nouveau votre courriel' InvalidMessage="Les courriels ne correspondent pas" value="${loggedUser.Email}">
+                </fieldset>
+                <fieldset>
+                    <legend>Mot de passe</legend>
+                    <input type="password" class="form-control" name="Password" id="Password" placeholder="Mot de passe" InvalidMessage='Mot de passe trop court'>
+                    <input class="form-control MatchedInput" type="password" matchedInputId="Password" name="matchedPassword" id="matchedPassword" placeholder="Vérification" InvalidMessage="Ne correspond pas au mot de passe">
+                </fieldset>
+                <fieldset>
+                    <legend>Nom</legend>
+                    <input type="text" class="form-control Alpha" name="Name" id="Name" placeholder="Nom" required RequireMessage='Veuillez entrer votre nom' InvalidMessage='Nom invalide' value="${loggedUser.Name}">
+                </fieldset>
+                <fieldset>
+                    <legend>Avatar</legend>
+                    <div class='imageUploader' newImage='false' controlId='Avatar' imageSrc='${loggedUser.Avatar}' waitingImage="images/Loading_icon.gif"></div>
+                </fieldset>
+                <input type='submit' name='submit' id='saveUserCmd' value="Enregistrer" class="form-control btn-primary">
+            </form>
+            <div class="cancel">
+                <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
+            </div>
+            <div class="cancel"> <hr>
+            <button class="form-control btn-warning" id="deleteAccountBtn">Effacer le compte</button>
+            </div>`;
+
+        $("#content").append($(modifierProfilContent));
+
+        initFormValidation();
+        initImageUploaders();
+        addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
+
+        $('#editProfilForm').on('submit', function(e) {
+            e.preventDefault();
+            let updatedProfil = getFormData($('#editProfilForm'));
+            delete updatedProfil.matchedPassword;
+            delete updatedProfil.matchedEmail;
+            API.modifyUserProfil(updatedProfil).then(response => {
+                
+                if (response) {
+                    API.storeLoggedUser(response); 
+                } else {
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+
+        });
+
+        $('#abortCmd').on('click', function() {
+            renderPhotos();
+        });
+        $('#deleteAccountBtn').on('click', function() {
+            renderConfirmDeleteProfil();
+        });
+        restoreContentScrollPosition();
+    }
+function renderConfirmDeleteProfil() {
+    eraseContent();
+    updateHeader("Retrait de compte");
+
+    let confirmDeleteContent = `
+    <div class="confirmDeleteContainer center">
+    <h2 class="viewTitle">Voulez-vous vraiment effacer votre compte?</h2>
+    <div class="form confirmForm">
+      <button class="form-control btn-danger" id="confirmDeleteBtn">Effacer mon compte</button><br>
+      <button class="form-control btn-secondary" id="cancelDeleteBtn">Annuler</button>
+    </div>
+  </div>
+    `;
+
+    $("#content").append($(confirmDeleteContent));
+
+    $("#confirmDeleteBtn").on('click', function() {
+        API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
+            if (isDeleted) {
+                logout();
+                renderLogin("Votre compte a été supprimé avec succès.");
+            } else {
+                renderModifyPersonnage();
+            }
+        });
+    });
+
+    $("#cancelDeleteBtn").on('click', function() {
+        renderModifyPersonnage();
+    });
+}
+
+  
+function renderProbleme() {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader("Problème");
+
+    let serverErrorContent = `
+        <div class="content" style="text-align:center">
+            <div class="errorContainer">
+                <h2>Le serveur ne répond pas</h2>
+                </div>
+            <hr>
+            <div class="cancel">
+                <button class="form-control btn-primary" id="connexion">Connexion</button>
+                </div>
+        </div>
+    `;
+
+    $("#content").append($(serverErrorContent));
+
+    $('#connexion').on('click', function() {
+        renderLogin();
+    });
+
+    restoreContentScrollPosition();
+}
+
 //#endregion
