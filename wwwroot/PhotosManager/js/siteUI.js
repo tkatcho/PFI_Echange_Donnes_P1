@@ -148,7 +148,7 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordError = '') {
+function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', passwordError = '') {
     saveContentScrollPosition();
     eraseContent();
     updateHeader('Connexion');
@@ -158,6 +158,7 @@ function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordErr
 
     let loginContent = `
         <div class="content" style="text-align:center">
+        <h3>${created}</h3>
             <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
@@ -213,9 +214,9 @@ function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordErr
             }
             else {
                 if (API.currentStatus == 482) {
-                    renderLogin("", email,"","Mot de passe incorrect");
+                    renderLogin("","", email,"","Mot de passe incorrect");
                 } else if (API.currentStatus == 481) {
-                    renderLogin("", '', 'Courriel introuvable', '');
+                    renderLogin("","", '', 'Courriel introuvable', '');
                 } else {
                     renderProbleme();
                 }
@@ -296,10 +297,10 @@ function renderInscription() {
     function createProfil(profilData) {
     
         API.register(profilData).then((response) => {
-            console.log("API.register response:", response);
     
             if (response) {
-                renderLogin("Votre compte a ete cree. Veuillez prendre vos courriels pour reccuperer votre code de verification qui vous sera demander");
+                sessionStorage.setItem('accountCreationSuccess', 'true');
+                // renderLogin("Votre compte a ete cree. Veuillez prendre vos courriels pour reccuperer votre code de verification qui vous sera demander");
             } else {
                     renderProbleme();
             }
@@ -316,7 +317,10 @@ function renderInscription() {
         initTimeout(timeBeforeRedirect, timedOut);
     
         let user = API.retrieveLoggedUser();
-    
+        if (sessionStorage.getItem('accountCreationSuccess') === 'true') {
+            sessionStorage.removeItem('accountCreationSuccess'); 
+            renderLogin("Votre compte a été créé. Veuillez prendre vos courriels pour reccuperer votre code de vérification qui vous sera demande lors de votre prochaine connexion");
+        } else 
         if (user != null) {
             if (user.Authorizations["readAccess"] !== -1 && user.Authorizations["writeAccess"] !== -1) {
                 isConnected = true;
