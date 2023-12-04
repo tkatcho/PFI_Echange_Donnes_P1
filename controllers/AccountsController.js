@@ -59,14 +59,16 @@ export default class AccountsController extends Controller {
     }
   }
   sendVerificationEmail(user) {
+    let user1 = this.repository.findByField("Id", user.Id);
+
     let html = `
-                Bonjour ${user.Name}, <br /> <br />
+                Bonjour ${user1.Name}, <br /> <br />
                 Voici votre code pour confirmer votre adresse de courriel
                 <br />
-                <h3>${user.VerifyCode}</h3>
+                <h3>${user1.VerifyCode}</h3>
             `;
     const gmail = new Gmail();
-    gmail.send(user.Email, "Vérification de courriel...", html);
+    gmail.send(user1.Email, "Vérification de courriel...", html);
   }
   sendConfirmedEmail(user) {
     let html = `

@@ -50,7 +50,30 @@ function updateHeader(viewTitle) {
   </div>
 </div>
   `;
-  } else {
+  } else if(isConnected && title == "Profil"){
+    headerContent = `
+    <span title="Profil" id="listPhotosCmd">
+  <img src="images/PhotoCloudLogo.png" class="appLogo">
+</span>
+
+<span class="viewTitle">${title}
+  <div class="cmdIcon fa fa-plus" id="newPhotoCmd" title="Ajouter une photo"></div>
+</span>
+
+<div class="headerMenusContainer">
+  <span>&nbsp;</span>
+  <i title="Modifier votre profil">
+    <div class="UserAvatarSmall" userid="${loggedUser.Id}" id="editProfilCmd"
+      style="background-image:url('${loggedUser.Avatar}')"
+      title="Nicolas Chourot"></div>
+  </i>
+
+  <div class="dropdown ms-auto dropdownLayout">
+    <!-- Your dropdown content goes here -->
+  </div>
+</div> `
+  }
+  else {
     headerContent = `
       <span title="Liste des photos" id="listPhotosCmd">
         <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -129,7 +152,9 @@ function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordErr
     saveContentScrollPosition();
     eraseContent();
     updateHeader('Connexion');
-   // noTimeout(); 
+    noTimeout();
+
+    restoreContentScrollPosition();
 
     let loginContent = `
         <div class="content" style="text-align:center">
@@ -153,53 +178,61 @@ function renderLogin(loginMessage = '', Email = '', EmailError = '', passwordErr
 
     $("#content").append($(loginContent));
 
-    $("#loginForm").on('submit', function(e) {
+    $("#loginForm").on('submit', function (e) {
         e.preventDefault();
         let email = $("input[name='Email']").val();
         let password = $("input[name='Password']").val();
 
-    API.login(email, password).then((user) => {
-      if (user) {
-        if (
-          user.Authorizations["readAccess"] !== -1 &&
-          user.Authorizations["writeAccess"] !== -1
-        ) {
-          isAdmin =
-            user.Authorizations["readAccess"] === 2 &&
-            user.Authorizations["writeAccess"] === 2;
+        API.login(email, password).then((user) => {
+            if (user) {
+                if (user.VerifyCode !== "verified") 
+                {
+                    renderEmailVerification();
+                } else
+                 {
 
-          isConnected = true;
-          loggedUser = user;
-          API.storeLoggedUser(user);
-          dropDownUsers(isAdmin);
-          renderPhotos();
-        } else {
-          loginMessage = "Vous etes blocker";
-          renderLogin();
-        }
-      } 
-      else 
-      {
-        if(API.currentStatus == 482) {
-            renderLogin("Mot de passe incorrect", email);
-        } else if(API.currentStatus == 481) {
-            renderLogin("Courriel introuvable", '', '', '');
-        } else {
-            renderLogin("Le serveur ne repond pas");
-        }
-    }
-    });
-  });
 
-    $("#createProfilCmd").on('click', function() {
-        renderInscription(); 
+                    if (
+                        user.Authorizations["readAccess"] !== -1 &&
+                        user.Authorizations["writeAccess"] !== -1
+                    ) {
+                        isAdmin =
+                            user.Authorizations["readAccess"] === 2 &&
+                            user.Authorizations["writeAccess"] === 2;
+
+                        isConnected = true;
+                        loggedUser = user;
+                        API.storeLoggedUser(user);
+                        dropDownUsers(isAdmin);
+                        renderPhotos();
+                    } else {
+                        loginMessage = "Vous etes blocker";
+                        renderLogin();
+                    }
+                }
+            }
+            else {
+                if (API.currentStatus == 482) {
+                    renderLogin("", email,"","Mot de passe incorrect");
+                } else if (API.currentStatus == 481) {
+                    renderLogin("", '', 'Courriel introuvable', '');
+                } else {
+                    renderProbleme();
+                }
+            }
+        });
     });
-    if(loginMessage !== '') {
-        let confirmationDiv = `<div class="confirmation-message">${loginMessage}</div>`;
-        $("#content").prepend(confirmationDiv);
-    }
+
+    $("#createProfilCmd").on('click', function () {
+        renderInscription();
+    });
+
     restoreContentScrollPosition();
-    
+
+}
+
+function updateLoginMessage(message) {
+    $(".loginMessage").text(message);
 }
 function renderInscription() {
     noTimeout();
@@ -231,9 +264,7 @@ function renderInscription() {
 <div class="cancel">
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
 </div>`);
-    $('#loginCmd').on('click',  function() {
-        renderLogin(); 
-    });  
+    
     initFormValidation();
     initImageUploaders();
     $('#abortCmd').on('click', function() {
@@ -242,18 +273,15 @@ function renderInscription() {
     addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
 
     $('#createProfilForm').on("submit", function (event) {
-        event.preventDefault();
         let profil = getFormData($('#createProfilForm'));
         delete profil.matchedPassword;
         delete profil.matchedEmail;
-    
-        createProfil(profil, function() {
-            const confirmationMessage = "Votre compte a été créé. Veuillez vérifier vos courriels pour le code de vérification.";
-            renderLogin(confirmationMessage); 
+        event.preventDefault();
+        showWaitingGif(); 
+        createProfil(profil); 
         });
-    });
-    
-    }
+        
+}
 
     function getFormData($form) {
         let unindexedArray = $form.serializeArray();
@@ -265,62 +293,55 @@ function renderInscription() {
     
         return indexedArray;
     }
-    function createProfil(profilData, onSuccess) {
-        showWaitingGif(); 
-        
-        API.register(profilData).then(response => {
+    function createProfil(profilData) {
+    
+        API.register(profilData).then((response) => {
+            console.log("API.register response:", response);
+    
             if (response) {
-                console.log("Profil créé avec succès", response);
-                if(onSuccess) onSuccess();
+                renderLogin("Votre compte a ete cree. Veuillez prendre vos courriels pour reccuperer votre code de verification qui vous sera demander");
             } else {
-                console.error("Erreur lors de la création du profil", API.currentHttpError);
+                    renderProbleme();
             }
-        }).finally(() => {
-            // Hide the waiting GIF or other cleanup actions
+        }).catch((error) => {
+            console.error(error);
         });
+    
     }
     
     
-        
-
-
-
-
-$(document).ready(function () {
-    console.log("Page loaded or reloaded");
-
-    initTimeout(timeBeforeRedirect, timedOut);
-    if (accountCreationSuccess) {
-        accountCreationSuccess = false;
-    }
-    else {
+    
+    
+    $(document).ready(function () {
+        initTimeout(timeBeforeRedirect, timedOut);
+    
         let user = API.retrieveLoggedUser();
-
-  if (user != null) {
-    if (
-      user.Authorizations["readAccess"] !== -1 &&
-      user.Authorizations["writeAccess"] !== -1
-    ) {
-      timeout();
-      isConnected = true;
-      loggedUser = user;
-      isAdmin =
-        user.Authorizations["readAccess"] === 2 &&
-        user.Authorizations["writeAccess"] === 2;
-      renderPhotos();
-    } else {
-      renderLogin();
-      loginMessage = "Blocked user";
-    }
-  } else {
-    renderLogin();
-  }
-});
+    
+        if (user != null) {
+            if (user.Authorizations["readAccess"] !== -1 && user.Authorizations["writeAccess"] !== -1) {
+                isConnected = true;
+                loggedUser = user;
+                isAdmin = user.Authorizations["readAccess"] === 2 && user.Authorizations["writeAccess"] === 2;
+    
+                if (user.VerifyCode !== "verified") {
+                    renderEmailVerification();
+                } else {
+                    renderPhotos();
+                }
+            } else {
+                renderLogin();
+                loginMessage = "Blocked user";
+            }
+        } else {
+            renderLogin();
+        }
+    });
+    
 
 setInterval(() => {
   let user = API.retrieveLoggedUser();
-  console.log("tour");
-  console.log(user.Authorizations);
+  //console.log("tour");
+  //console.log(user.Authorizations);
   if (user != null) {
     if (
       user.Authorizations["readAccess"] === -1 &&
@@ -430,6 +451,7 @@ function renderPhotos() {
 
   $("#content").append($(photosContent));
 }
+
 function dropDownUsers(isAdmin) {
   let content;
   if (isAdmin) {
@@ -596,4 +618,158 @@ function renderCmds() {
     renderGestionPersonnage();
   });
 }
+
+function renderEmailVerification() {
+    eraseContent();
+    updateHeader("Verification");
+    let verificationContent = `
+        <div class="content" style="text-align:center">
+            <h3>Veuillez entrer le code de verification que vous avez recu par courriel</h3>
+            <form class="form" id="verificationForm">
+                <input type='text' name='verifyCode' class="form-control" required 
+                    placeholder="Verification Code">
+                <input type='submit' name='submit' value="Verify" class="form-control btn-primary">
+            </form>
+        </div>
+    `;
+    $("#content").append($(verificationContent));
+
+    $("#verificationForm").on('submit', function(e) {
+        e.preventDefault();
+        let verifyCode = $("input[name='verifyCode']").val();
+        API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
+            if (isValid) {
+                renderLogin();
+            } else {
+                renderEmailVerification();
+            }
+        });
+    });
+}
+
+    function renderModifyPersonnage() {
+        saveContentScrollPosition();
+        eraseContent();
+        updateHeader("Profil");
+
+        let modifierProfilContent = `
+            <form class="form" id="editProfilForm">
+                <input type="hidden" name="Id" id="Id" value="${loggedUser.Id}"/>
+                <fieldset>
+                    <legend>Adresse ce courriel</legend>
+                    <input type="email" class="form-control Email" name="Email" id="Email" placeholder="Courriel" required RequireMessage='Veuillez entrer votre courriel' InvalidMessage='Courriel invalide' CustomErrorMessage="Ce courriel est déjà utilisé" value="${loggedUser.Email}">
+                    <input class="form-control MatchedInput" type="text" matchedInputId="Email" name="matchedEmail" id="matchedEmail" placeholder="Vérification" required RequireMessage='Veuillez entrez de nouveau votre courriel' InvalidMessage="Les courriels ne correspondent pas" value="${loggedUser.Email}">
+                </fieldset>
+                <fieldset>
+                    <legend>Mot de passe</legend>
+                    <input type="password" class="form-control" name="Password" id="Password" placeholder="Mot de passe" InvalidMessage='Mot de passe trop court'>
+                    <input class="form-control MatchedInput" type="password" matchedInputId="Password" name="matchedPassword" id="matchedPassword" placeholder="Vérification" InvalidMessage="Ne correspond pas au mot de passe">
+                </fieldset>
+                <fieldset>
+                    <legend>Nom</legend>
+                    <input type="text" class="form-control Alpha" name="Name" id="Name" placeholder="Nom" required RequireMessage='Veuillez entrer votre nom' InvalidMessage='Nom invalide' value="${loggedUser.Name}">
+                </fieldset>
+                <fieldset>
+                    <legend>Avatar</legend>
+                    <div class='imageUploader' newImage='false' controlId='Avatar' imageSrc='${loggedUser.Avatar}' waitingImage="images/Loading_icon.gif"></div>
+                </fieldset>
+                <input type='submit' name='submit' id='saveUserCmd' value="Enregistrer" class="form-control btn-primary">
+            </form>
+            <div class="cancel">
+                <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
+            </div>
+            <div class="cancel"> <hr>
+            <button class="form-control btn-warning" id="deleteAccountBtn">Effacer le compte</button>
+            </div>`;
+
+        $("#content").append($(modifierProfilContent));
+
+        initFormValidation();
+        initImageUploaders();
+        addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
+
+        $('#editProfilForm').on('submit', function(e) {
+            e.preventDefault();
+            let updatedProfil = getFormData($('#editProfilForm'));
+            delete updatedProfil.matchedPassword;
+            delete updatedProfil.matchedEmail;
+            API.modifyUserProfil(updatedProfil).then(response => {
+                
+                if (response) {
+                    API.storeLoggedUser(response); 
+                } else {
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+
+        });
+
+        $('#abortCmd').on('click', function() {
+            renderPhotos();
+        });
+        $('#deleteAccountBtn').on('click', function() {
+            renderConfirmDeleteProfil();
+        });
+        restoreContentScrollPosition();
+    }
+function renderConfirmDeleteProfil() {
+    eraseContent();
+    updateHeader("Retrait de compte");
+
+    let confirmDeleteContent = `
+    <div class="confirmDeleteContainer center">
+    <h2 class="viewTitle">Voulez-vous vraiment effacer votre compte?</h2>
+    <div class="form confirmForm">
+      <button class="form-control btn-danger" id="confirmDeleteBtn">Effacer mon compte</button><br>
+      <button class="form-control btn-secondary" id="cancelDeleteBtn">Annuler</button>
+    </div>
+  </div>
+    `;
+
+    $("#content").append($(confirmDeleteContent));
+
+    $("#confirmDeleteBtn").on('click', function() {
+        API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
+            if (isDeleted) {
+                logout();
+                renderLogin("Votre compte a été supprimé avec succès.");
+            } else {
+                renderModifyPersonnage();
+            }
+        });
+    });
+
+    $("#cancelDeleteBtn").on('click', function() {
+        renderModifyPersonnage();
+    });
+}
+
+  
+function renderProbleme() {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader("Problème");
+
+    let serverErrorContent = `
+        <div class="content" style="text-align:center">
+            <div class="errorContainer">
+                <h2>Le serveur ne répond pas</h2>
+                </div>
+            <hr>
+            <div class="cancel">
+                <button class="form-control btn-primary" id="connexion">Connexion</button>
+                </div>
+        </div>
+    `;
+
+    $("#content").append($(serverErrorContent));
+
+    $('#connexion').on('click', function() {
+        renderLogin();
+    });
+
+    restoreContentScrollPosition();
+}
+
 //#endregion
