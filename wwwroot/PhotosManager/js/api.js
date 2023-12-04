@@ -63,13 +63,14 @@ class API {
         },
         error: (xhr) => {
           loginMessage = "server error";
-          logout();
+          //logout();
           API.setHttpErrorState(xhr);
           resolve(false);
         },
       });
     });
   }
+
   static register(profil) {
     API.initHttpState();
     return new Promise((resolve) => {
@@ -181,6 +182,9 @@ class API {
         headers: API.getBearerAuthorizationToken(),
         data: JSON.stringify(id),
         success: () => {
+          //API.eraseAccessToken();
+          //API.eraseLoggedUser();
+          //this.logout(id);
           resolve(true);
         },
         error: (xhr) => {
@@ -202,6 +206,12 @@ class API {
         headers: API.getBearerAuthorizationToken(),
         data: JSON.stringify(id),
         success: () => {
+          const loggedUser = API.retrieveLoggedUser();
+          if (loggedUser && loggedUser.Id === id) {
+            // Optional: Force logout or take other actions
+            //API.eraseAccessToken();
+            //API.eraseLoggedUser();
+          }
           resolve(true);
         },
         error: (xhr) => {
@@ -213,6 +223,7 @@ class API {
       });
     });
   }
+  static find(id) {}
   static modifyUserProfil(profil) {
     API.initHttpState();
     return new Promise((resolve) => {

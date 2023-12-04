@@ -166,7 +166,7 @@ function renderLogin() {
     let password = $("input[name='Password']").val();
 
     API.login(email, password).then((user) => {
-      if (user) {
+      if (user != undefined) {
         if (
           user.Authorizations["readAccess"] !== -1 &&
           user.Authorizations["writeAccess"] !== -1
@@ -177,15 +177,14 @@ function renderLogin() {
 
           isConnected = true;
           loggedUser = user;
-          API.storeLoggedUser(user);
           dropDownUsers(isAdmin);
           renderPhotos();
         } else {
           loginMessage = "Vous etes blocker";
-          renderLogin();
+          logout();
         }
       } else {
-        $("h3").text("Erreur");
+        $("h3").text("not found");
       }
     });
   });
@@ -294,7 +293,7 @@ $(document).ready(function () {
         user.Authorizations["writeAccess"] === 2;
       renderPhotos();
     } else {
-      renderLogin();
+      logout();
       loginMessage = "Blocked user";
     }
   } else {
@@ -303,19 +302,17 @@ $(document).ready(function () {
 });
 
 setInterval(() => {
-  let user = API.retrieveLoggedUser();
-  console.log("tour");
-  console.log(user.Authorizations);
-  if (user != null) {
-    if (
-      user.Authorizations["readAccess"] === -1 &&
-      user.Authorizations["writeAccess"] === -1
-    ) {
-      renderLogin();
-      loginMessage = "You have been blocked";
-    }
-  }
-}, 1000);
+  // if (loggedUser) {
+  //   API.GetAccounts().then((response) => {
+  //     const users = response.data;
+  //     if (users) {
+  //       users.forEach((user) => {
+  //         console.log(user.Authorizations); //fonctionne
+  //       });
+  //     }
+  //   });
+  // }
+}, 5000);
 
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
@@ -536,7 +533,6 @@ function renderCmds() {
   $("#logoutCmd").on("click", function () {
     showWaitingGif();
     logout();
-    renderLogin();
   });
   $("#listPhotosCmd").on("click", function () {
     showWaitingGif();

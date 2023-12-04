@@ -189,7 +189,6 @@ export default class AccountsController extends Controller {
         let user = this.repository.findByField("Id", id);
         if (user != null) {
           user.Authorizations = Authorizations.admin();
-
           user.Avatar = user.Avatar;
           user.Password = user.Password;
           let updatedUser = this.repository.update(user.Id, user);
@@ -271,6 +270,7 @@ export default class AccountsController extends Controller {
           user.Avatar = user.Avatar;
           user.Password = user.Password;
           let updatedUser = this.repository.update(user.Id, user);
+          TokenManager.create(updatedUser);
           if (this.repository.model.state.isValid) {
             this.HttpContext.response.updated(updatedUser);
           } else {
