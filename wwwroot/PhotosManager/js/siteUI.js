@@ -147,30 +147,30 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin(
-  created = "",
-  loginMessage = "",
-  Email = "",
-  EmailError = "",
-  passwordError = ""
-) {
+function renderLogin() {
   saveContentScrollPosition();
   eraseContent();
   updateHeader("Connexion");
+  dropDownAnonymous();
   noTimeout();
 
-  restoreContentScrollPosition();
+  let Email = "";
+  let EmailError = "";
+  let passwordError = "";
 
   let loginContent = `
         <div class="content" style="text-align:center">
-        <h3>${created}</h3>
             <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
-                    placeholder="adresse de courriel" value='${Email}'>
+                    RequireMessage = 'Veuillez entrer votre courriel'
+                    InvalidMessage = 'Courriel invalide'
+                    placeholder="adresse de courriel"
+                    value='${Email}'>
                 <span style='color:red'>${EmailError}</span>
                 <input type='password' name='Password' placeholder='Mot de passe'
-                    class="form-control" required>
+                    class="form-control" required 
+                    RequireMessage = 'Veuillez entrer votre mot de passe'>
                 <span style='color:red'>${passwordError}</span>
                 <input type='submit' name='submit' value="Entrer" class="form-control btn-primary">
             </form>
@@ -200,15 +200,14 @@ function renderLogin(
 
           isConnected = true;
           loggedUser = user;
-          API.storeLoggedUser(user);
           dropDownUsers(isAdmin);
           renderPhotos();
         } else {
           loginMessage = "Vous etes blocker";
-          renderLogin();
+          logout();
         }
       } else {
-        $("h3").text("Erreur");
+        $("h3").text("User not found");
       }
     });
   });
@@ -263,6 +262,7 @@ function renderInscription() {
 
   restoreContentScrollPosition();
 }
+
 $(document).ready(function () {
   let user = API.retrieveLoggedUser();
   initTimeout(timeBeforeRedirect, timedOut);
@@ -288,19 +288,6 @@ $(document).ready(function () {
   }
 });
 
-setInterval(() => {
-  // if (loggedUser) {
-  //   API.GetAccounts().then((response) => {
-  //     const users = response.data;
-  //     if (users) {
-  //       users.forEach((user) => {
-  //         console.log(user.Authorizations); //fonctionne
-  //       });
-  //     }
-  //   });
-  // }
-}, 5000);
-
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
     <i class="cmdIcon fa fa-ellipsis-vertical"></i>
@@ -323,7 +310,6 @@ function dropDownAnonymous() {
 function renderGestionPersonnage() {
   saveContentScrollPosition();
   eraseContent();
-  z;
   updateHeader("Gestion des usagers");
   timeout();
 
@@ -562,11 +548,42 @@ function renderCmds() {
   $(".deleteCmd").on("click", function () {
     showWaitingGif();
     const userId = $(this).attr("deleteuser_id");
-    API.unsubscribeAccount(userId);
+
+    renderConfirmDeleteAccountAdmin(userId);
+  });
+}
+function renderConfirmDeleteAccountAdmin(userId) {
+  eraseContent();
+  updateHeader("Retrait de compte");
+  timedOut();
+
+  let confirmDeleteContent = `
+    <div class="confirmDeleteContainer center">
+    <h2 class="viewTitle">Voulez-vous vraiment effacer cet usager et tout ses photos?</h2>
+    <div class="form confirmForm">
+      <button class="form-control btn-danger" id="confirmDeleteBtn">Effacer le compte</button><br>
+      <button class="form-control btn-secondary" id="cancelDeleteBtn">Annuler</button>
+    </div>
+  </div>
+    `;
+
+  $("#content").append($(confirmDeleteContent));
+
+  $("#confirmDeleteBtn").on("click", function () {
+    API.unsubscribeAccount(userId).then((isDeleted) => {
+      if (isDeleted) {
+        renderGestionPersonnage();
+      } else {
+        loginMessage = "A error has occured";
+        logout();
+      }
+    });
+  });
+
+  $("#cancelDeleteBtn").on("click", function () {
     renderGestionPersonnage();
   });
 }
-
 function renderEmailVerification() {
   eraseContent();
   updateHeader("Verification");
@@ -661,6 +678,7 @@ function renderModifyPersonnage() {
   });
   restoreContentScrollPosition();
 }
+
 function renderConfirmDeleteProfil() {
   eraseContent();
   updateHeader("Retrait de compte");
