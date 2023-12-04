@@ -50,7 +50,7 @@ function updateHeader(viewTitle) {
   </div>
 </div>
   `;
-  } else if(isConnected && title == "Profil"){
+  } else if (isConnected && title == "Profil") {
     headerContent = `
     <span title="Profil" id="listPhotosCmd">
   <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -71,9 +71,8 @@ function updateHeader(viewTitle) {
   <div class="dropdown ms-auto dropdownLayout">
     <!-- Your dropdown content goes here -->
   </div>
-</div> `
-  }
-  else {
+</div> `;
+  } else {
     headerContent = `
       <span title="Liste des photos" id="listPhotosCmd">
         <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -148,15 +147,21 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', passwordError = '') {
-    saveContentScrollPosition();
-    eraseContent();
-    updateHeader('Connexion');
-    noTimeout();
+function renderLogin(
+  created = "",
+  loginMessage = "",
+  Email = "",
+  EmailError = "",
+  passwordError = ""
+) {
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Connexion");
+  noTimeout();
 
-    restoreContentScrollPosition();
+  restoreContentScrollPosition();
 
-    let loginContent = `
+  let loginContent = `
         <div class="content" style="text-align:center">
         <h3>${created}</h3>
             <h3 class="loginMessage">${loginMessage}</h3>
@@ -176,13 +181,12 @@ function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', 
         </div>
     `;
 
+  $("#content").append($(loginContent));
 
-    $("#content").append($(loginContent));
-
-    $("#loginForm").on('submit', function (e) {
-        e.preventDefault();
-        let email = $("input[name='Email']").val();
-        let password = $("input[name='Password']").val();
+  $("#loginForm").on("submit", function (e) {
+    e.preventDefault();
+    let email = $("input[name='Email']").val();
+    let password = $("input[name='Password']").val();
 
     API.login(email, password).then((user) => {
       if (user) {
@@ -209,23 +213,22 @@ function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', 
     });
   });
 
-    $("#createProfilCmd").on('click', function () {
-        renderInscription();
-    });
+  $("#createProfilCmd").on("click", function () {
+    renderInscription();
+  });
 
-    restoreContentScrollPosition();
-
+  restoreContentScrollPosition();
 }
 
 function updateLoginMessage(message) {
-    $(".loginMessage").text(message);
+  $(".loginMessage").text(message);
 }
 function renderInscription() {
-    noTimeout();
-    eraseContent(); 
-    updateHeader("Inscription");
-    $("#newPhotoCmd").hide(); 
-    $("#content").append(`
+  noTimeout();
+  eraseContent();
+  updateHeader("Inscription");
+  $("#newPhotoCmd").hide();
+  $("#content").append(`
     <form class="form" id="createProfilForm">
     <fieldset>
         <legend>Adresse courriel</legend>
@@ -249,7 +252,7 @@ function renderInscription() {
 </form>
 <div class="cancel">
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
-    </div>`;
+    </div>`);
 
   $("#content").append($(registerContent));
 
@@ -319,7 +322,8 @@ function dropDownAnonymous() {
 }
 function renderGestionPersonnage() {
   saveContentScrollPosition();
-  eraseContent();z
+  eraseContent();
+  z;
   updateHeader("Gestion des usagers");
   timeout();
 
@@ -564,9 +568,9 @@ function renderCmds() {
 }
 
 function renderEmailVerification() {
-    eraseContent();
-    updateHeader("Verification");
-    let verificationContent = `
+  eraseContent();
+  updateHeader("Verification");
+  let verificationContent = `
         <div class="content" style="text-align:center">
             <h3>Veuillez entrer le code de verification que vous avez recu par courriel</h3>
             <form class="form" id="verificationForm">
@@ -576,27 +580,27 @@ function renderEmailVerification() {
             </form>
         </div>
     `;
-    $("#content").append($(verificationContent));
+  $("#content").append($(verificationContent));
 
-    $("#verificationForm").on('submit', function(e) {
-        e.preventDefault();
-        let verifyCode = $("input[name='verifyCode']").val();
-        API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
-            if (isValid) {
-                renderLogin();
-            } else {
-                renderEmailVerification();
-            }
-        });
+  $("#verificationForm").on("submit", function (e) {
+    e.preventDefault();
+    let verifyCode = $("input[name='verifyCode']").val();
+    API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
+      if (isValid) {
+        renderLogin();
+      } else {
+        renderEmailVerification();
+      }
     });
+  });
 }
 
-    function renderModifyPersonnage() {
-        saveContentScrollPosition();
-        eraseContent();
-        updateHeader("Profil");
+function renderModifyPersonnage() {
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Profil");
 
-        let modifierProfilContent = `
+  let modifierProfilContent = `
             <form class="form" id="editProfilForm">
                 <input type="hidden" name="Id" id="Id" value="${loggedUser.Id}"/>
                 <fieldset>
@@ -626,42 +630,42 @@ function renderEmailVerification() {
             <button class="form-control btn-warning" id="deleteAccountBtn">Effacer le compte</button>
             </div>`;
 
-        $("#content").append($(modifierProfilContent));
+  $("#content").append($(modifierProfilContent));
 
-        initFormValidation();
-        initImageUploaders();
-        addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
+  initFormValidation();
+  initImageUploaders();
+  addConflictValidation(API.checkConflictURL(), "Email", "saveUser");
 
-        $('#editProfilForm').on('submit', function(e) {
-            e.preventDefault();
-            let updatedProfil = getFormData($('#editProfilForm'));
-            delete updatedProfil.matchedPassword;
-            delete updatedProfil.matchedEmail;
-            API.modifyUserProfil(updatedProfil).then(response => {
-                
-                if (response) {
-                    API.storeLoggedUser(response); 
-                } else {
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-            });
+  $("#editProfilForm").on("submit", function (e) {
+    e.preventDefault();
+    let updatedProfil = getFormData($("#editProfilForm"));
+    delete updatedProfil.matchedPassword;
+    delete updatedProfil.matchedEmail;
+    API.modifyUserProfil(updatedProfil)
+      .then((response) => {
+        if (response) {
+          API.storeLoggedUser(response);
+        } else {
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  });
 
-        });
-
-        $('#abortCmd').on('click', function() {
-            renderPhotos();
-        });
-        $('#deleteAccountBtn').on('click', function() {
-            renderConfirmDeleteProfil();
-        });
-        restoreContentScrollPosition();
-    }
+  $("#abortCmd").on("click", function () {
+    renderPhotos();
+  });
+  $("#deleteAccountBtn").on("click", function () {
+    renderConfirmDeleteProfil();
+  });
+  restoreContentScrollPosition();
+}
 function renderConfirmDeleteProfil() {
-    eraseContent();
-    updateHeader("Retrait de compte");
+  eraseContent();
+  updateHeader("Retrait de compte");
 
-    let confirmDeleteContent = `
+  let confirmDeleteContent = `
     <div class="confirmDeleteContainer center">
     <h2 class="viewTitle">Voulez-vous vraiment effacer votre compte?</h2>
     <div class="form confirmForm">
@@ -671,31 +675,30 @@ function renderConfirmDeleteProfil() {
   </div>
     `;
 
-    $("#content").append($(confirmDeleteContent));
+  $("#content").append($(confirmDeleteContent));
 
-    $("#confirmDeleteBtn").on('click', function() {
-        API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
-            if (isDeleted) {
-                logout();
-                renderLogin("Votre compte a été supprimé avec succès.");
-            } else {
-                renderModifyPersonnage();
-            }
-        });
-    });
-
-    $("#cancelDeleteBtn").on('click', function() {
+  $("#confirmDeleteBtn").on("click", function () {
+    API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
+      if (isDeleted) {
+        logout();
+        renderLogin("Votre compte a été supprimé avec succès.");
+      } else {
         renderModifyPersonnage();
+      }
     });
+  });
+
+  $("#cancelDeleteBtn").on("click", function () {
+    renderModifyPersonnage();
+  });
 }
 
-  
 function renderProbleme() {
-    saveContentScrollPosition();
-    eraseContent();
-    updateHeader("Problème");
+  saveContentScrollPosition();
+  eraseContent();
+  updateHeader("Problème");
 
-    let serverErrorContent = `
+  let serverErrorContent = `
         <div class="content" style="text-align:center">
             <div class="errorContainer">
                 <h2>Le serveur ne répond pas</h2>
@@ -707,13 +710,13 @@ function renderProbleme() {
         </div>
     `;
 
-    $("#content").append($(serverErrorContent));
+  $("#content").append($(serverErrorContent));
 
-    $('#connexion').on('click', function() {
-        renderLogin();
-    });
+  $("#connexion").on("click", function () {
+    renderLogin();
+  });
 
-    restoreContentScrollPosition();
+  restoreContentScrollPosition();
 }
 
 //#endregion
