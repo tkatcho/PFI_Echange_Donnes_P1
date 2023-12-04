@@ -300,7 +300,6 @@ function renderInscription() {
     
             if (response) {
                 sessionStorage.setItem('accountCreationSuccess', 'true');
-                // renderLogin("Votre compte a ete cree. Veuillez prendre vos courriels pour reccuperer votre code de verification qui vous sera demander");
             } else {
                     renderProbleme();
             }
@@ -344,8 +343,8 @@ function renderInscription() {
 
 setInterval(() => {
   let user = API.retrieveLoggedUser();
-  //console.log("tour");
-  //console.log(user.Authorizations);
+  console.log("tour");
+  console.log(user.Authorizations);
   if (user != null) {
     if (
       user.Authorizations["readAccess"] === -1 &&
