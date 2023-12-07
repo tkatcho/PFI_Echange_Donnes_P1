@@ -50,7 +50,7 @@ function updateHeader(viewTitle) {
   </div>
 </div>
   `;
-  } else if (isConnected && title == "Profil") {
+  } else if(isConnected && title == "Profil"){
     headerContent = `
     <span title="Profil" id="listPhotosCmd">
   <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -71,8 +71,9 @@ function updateHeader(viewTitle) {
   <div class="dropdown ms-auto dropdownLayout">
     <!-- Your dropdown content goes here -->
   </div>
-</div> `;
-  } else {
+</div> `
+  }
+  else {
     headerContent = `
       <span title="Liste des photos" id="listPhotosCmd">
         <img src="images/PhotoCloudLogo.png" class="appLogo">
@@ -81,8 +82,8 @@ function updateHeader(viewTitle) {
         </span
 
         <div class="headerMenusContainer">
-         
-         
+
+
           <div class="dropdown ms-auto dropdownLayout">
 
           </div>
@@ -147,30 +148,24 @@ function renderAbout() {
     dropDownAnonymous();
   }
 }
-function renderLogin() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Connexion");
-  dropDownAnonymous();
-  noTimeout();
+function renderLogin(created='',loginMessage = '', Email = '', EmailError = '', passwordError = '') {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader('Connexion');
+    noTimeout();
 
-  let Email = "";
-  let EmailError = "";
-  let passwordError = "";
+    restoreContentScrollPosition();
 
-  let loginContent = `
+    let loginContent = `
         <div class="content" style="text-align:center">
+        <h3>${created}</h3>
             <h3 class="loginMessage">${loginMessage}</h3>
             <form class="form" id="loginForm">
                 <input type='email' name='Email' class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre courriel'
-                    InvalidMessage = 'Courriel invalide'
-                    placeholder="adresse de courriel"
-                    value='${Email}'>
+                    placeholder="adresse de courriel" value='${Email}'>
                 <span style='color:red'>${EmailError}</span>
                 <input type='password' name='Password' placeholder='Mot de passe'
-                    class="form-control" required 
-                    RequireMessage = 'Veuillez entrer votre mot de passe'>
+                    class="form-control" required>
                 <span style='color:red'>${passwordError}</span>
                 <input type='submit' name='submit' value="Entrer" class="form-control btn-primary">
             </form>
@@ -181,53 +176,73 @@ function renderLogin() {
         </div>
     `;
 
-  $("#content").append($(loginContent));
 
-  $("#loginForm").on("submit", function (e) {
-    e.preventDefault();
-    let email = $("input[name='Email']").val();
-    let password = $("input[name='Password']").val();
+    $("#content").append($(loginContent));
 
-    API.login(email, password).then((user) => {
-      if (user) {
-        if (
-          user.Authorizations["readAccess"] !== -1 &&
-          user.Authorizations["writeAccess"] !== -1
-        ) {
-          isAdmin =
-            user.Authorizations["readAccess"] === 2 &&
-            user.Authorizations["writeAccess"] === 2;
+    $("#loginForm").on('submit', function (e) {
+        e.preventDefault();
+        let email = $("input[name='Email']").val();
+        let password = $("input[name='Password']").val();
 
-          isConnected = true;
-          loggedUser = user;
-          dropDownUsers(isAdmin);
-          renderPhotos();
-        } else {
-          loginMessage = "Vous etes blocker";
-          logout();
-        }
-      } else {
-        $("h3").text("User not found");
-      }
+        API.login(email, password).then((user) => {
+            if (user) {
+                          loggedUser = user;
+
+                if (user.VerifyCode !== "verified") 
+                {
+                    renderEmailVerification();
+                } else
+                 {
+
+
+                    if (
+                        user.Authorizations["readAccess"] !== -1 &&
+                        user.Authorizations["writeAccess"] !== -1
+                    ) {
+                        isAdmin =
+                            user.Authorizations["readAccess"] === 2 &&
+                            user.Authorizations["writeAccess"] === 2;
+
+                        isConnected = true;
+                        loggedUser = user;
+                        API.storeLoggedUser(user);
+                        dropDownUsers(isAdmin);
+                        renderPhotos();
+                    } else {
+                        loginMessage = "Vous etes blocker";
+                        renderLogin();
+                    }
+                }
+            }
+            else {
+                if (API.currentStatus == 482) {
+                    renderLogin("","", email,"","Mot de passe incorrect");
+                } else if (API.currentStatus == 481) {
+                    renderLogin("","", '', 'Courriel introuvable', '');
+                } else {
+                    renderProbleme();
+                }
+            }
+        });
     });
-  });
 
-  $("#createProfilCmd").on("click", function () {
-    renderInscription();
-  });
+    $("#createProfilCmd").on('click', function () {
+        renderInscription();
+    });
 
-  restoreContentScrollPosition();
+    restoreContentScrollPosition();
+
 }
 
 function updateLoginMessage(message) {
-  $(".loginMessage").text(message);
+    $(".loginMessage").text(message);
 }
 function renderInscription() {
-  noTimeout();
-  eraseContent();
-  updateHeader("Inscription");
-  $("#newPhotoCmd").hide();
-  $("#content").append(`
+    noTimeout();
+    eraseContent(); 
+    updateHeader("Inscription");
+    $("#newPhotoCmd").hide(); 
+    $("#content").append(`
     <form class="form" id="createProfilForm">
     <fieldset>
         <legend>Adresse courriel</legend>
@@ -251,42 +266,94 @@ function renderInscription() {
 </form>
 <div class="cancel">
     <button class="form-control btn-secondary" id="abortCmd">Annuler</button>
-    </div>`);
+</div>`);
 
-  $("#content").append($(registerContent));
+    initFormValidation();
+    initImageUploaders();
 
-  $("#createProfilCmd").on("click", function () {});
-  $("#abortCmd").on("click", function () {
-    renderLogin();
-  });
+    $('#abortCmd').on('click', function() {
+        renderLogin(); 
+    }); 
+    addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
 
-  restoreContentScrollPosition();
+    $('#createProfilForm').on("submit", function (event) {
+        let profil = getFormData($('#createProfilForm'));
+        delete profil.matchedPassword;
+        delete profil.matchedEmail;
+        event.preventDefault();
+        showWaitingGif(); 
+        createProfil(profil); 
+        });
+
 }
 
-$(document).ready(function () {
-  let user = API.retrieveLoggedUser();
-  initTimeout(timeBeforeRedirect, timedOut);
+    function getFormData($form) {
+        let unindexedArray = $form.serializeArray();
+        let indexedArray = {};
 
-  if (user != null) {
-    if (
-      user.Authorizations["readAccess"] !== -1 &&
-      user.Authorizations["writeAccess"] !== -1
-    ) {
-      timeout();
-      isConnected = true;
-      loggedUser = user;
-      isAdmin =
-        user.Authorizations["readAccess"] === 2 &&
-        user.Authorizations["writeAccess"] === 2;
-      renderPhotos();
-    } else {
-      renderLogin();
-      loginMessage = "Blocked user";
+        $.map(unindexedArray, function(n, i) {
+            indexedArray[n['name']] = n['value'];
+        });
+
+        return indexedArray;
     }
-  } else {
-    renderLogin();
+    function createProfil(profilData) {
+
+        API.register(profilData).then((response) => {
+
+            if (response) {
+                //sessionStorage.setItem('accountCreationSuccess', 'true');
+            renderLogin("Votre compte a été créé. Veuillez prendre vos courriels pour reccuperer votre code de vérification qui vous sera demande lors de votre prochaine connexion");
+            } else {
+                    renderProbleme();
+            }
+        }).catch((error) => {
+            console.error(error);
+        });
+
+    }
+
+
+
+
+    $(document).ready(function () {
+        initTimeout(timeBeforeRedirect, timedOut);
+
+        let user = API.retrieveLoggedUser();
+
+        if (user != null) {
+            if (user.Authorizations["readAccess"] !== -1 && user.Authorizations["writeAccess"] !== -1) {
+                isConnected = true;
+                loggedUser = user;
+                isAdmin = user.Authorizations["readAccess"] === 2 && user.Authorizations["writeAccess"] === 2;
+
+                if (user.VerifyCode !== "verified") {
+                    renderEmailVerification();
+                } else {
+                    renderPhotos();
+                }
+            } else {
+                renderLogin();
+                loginMessage = "Blocked user";
+            }
+        } else {
+            renderLogin();
+        }
+    });
+
+
+setInterval(() => {
+  let user = API.retrieveLoggedUser();
+    if (user != null) {
+    if (
+      user.Authorizations["readAccess"] === -1 &&
+      user.Authorizations["writeAccess"] === -1
+    ) {
+      renderLogin();
+      loginMessage = "You have been blocked";
+    }
   }
-});
+}, 1000);
 
 function dropDownAnonymous() {
   let content = `<div data-bs-toggle="dropdown" aria-expanded="false">
@@ -508,6 +575,7 @@ function renderCmds() {
   $("#logoutCmd").on("click", function () {
     showWaitingGif();
     logout();
+    renderLogin();
   });
   $("#listPhotosCmd").on("click", function () {
     showWaitingGif();
@@ -548,46 +616,15 @@ function renderCmds() {
   $(".deleteCmd").on("click", function () {
     showWaitingGif();
     const userId = $(this).attr("deleteuser_id");
-
-    renderConfirmDeleteAccountAdmin(userId);
-  });
-}
-function renderConfirmDeleteAccountAdmin(userId) {
-  eraseContent();
-  updateHeader("Retrait de compte");
-  timedOut();
-
-  let confirmDeleteContent = `
-    <div class="confirmDeleteContainer center">
-    <h2 class="viewTitle">Voulez-vous vraiment effacer cet usager et tout ses photos?</h2>
-    <div class="form confirmForm">
-      <button class="form-control btn-danger" id="confirmDeleteBtn">Effacer le compte</button><br>
-      <button class="form-control btn-secondary" id="cancelDeleteBtn">Annuler</button>
-    </div>
-  </div>
-    `;
-
-  $("#content").append($(confirmDeleteContent));
-
-  $("#confirmDeleteBtn").on("click", function () {
-    API.unsubscribeAccount(userId).then((isDeleted) => {
-      if (isDeleted) {
-        renderGestionPersonnage();
-      } else {
-        loginMessage = "A error has occured";
-        logout();
-      }
-    });
-  });
-
-  $("#cancelDeleteBtn").on("click", function () {
+    API.unsubscribeAccount(userId);
     renderGestionPersonnage();
   });
 }
+
 function renderEmailVerification() {
-  eraseContent();
-  updateHeader("Verification");
-  let verificationContent = `
+    eraseContent();
+    updateHeader("Verification");
+    let verificationContent = `
         <div class="content" style="text-align:center">
             <h3>Veuillez entrer le code de verification que vous avez recu par courriel</h3>
             <form class="form" id="verificationForm">
@@ -597,27 +634,28 @@ function renderEmailVerification() {
             </form>
         </div>
     `;
-  $("#content").append($(verificationContent));
+    $("#content").append($(verificationContent));
 
-  $("#verificationForm").on("submit", function (e) {
-    e.preventDefault();
-    let verifyCode = $("input[name='verifyCode']").val();
-    API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
-      if (isValid) {
-        renderLogin();
-      } else {
-        renderEmailVerification();
-      }
+    $("#verificationForm").on('submit', function(e) {
+        e.preventDefault();
+        let verifyCode = $("input[name='verifyCode']").val();
+        API.verifyEmail(loggedUser.Id, verifyCode).then((isValid) => {
+            if (isValid) {
+              isConnected = true;
+                renderPhotos();
+            } else {
+                renderEmailVerification();
+            }
+        });
     });
-  });
 }
 
-function renderModifyPersonnage() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Profil");
+    function renderModifyPersonnage() {
+        saveContentScrollPosition();
+        eraseContent();
+        updateHeader("Profil");
 
-  let modifierProfilContent = `
+        let modifierProfilContent = `
             <form class="form" id="editProfilForm">
                 <input type="hidden" name="Id" id="Id" value="${loggedUser.Id}"/>
                 <fieldset>
@@ -647,43 +685,52 @@ function renderModifyPersonnage() {
             <button class="form-control btn-warning" id="deleteAccountBtn">Effacer le compte</button>
             </div>`;
 
-  $("#content").append($(modifierProfilContent));
+        $("#content").append($(modifierProfilContent));
 
-  initFormValidation();
-  initImageUploaders();
-  addConflictValidation(API.checkConflictURL(), "Email", "saveUser");
+        initFormValidation();
+        initImageUploaders();
+        addConflictValidation(API.checkConflictURL(), 'Email', 'saveUser');
 
-  $("#editProfilForm").on("submit", function (e) {
+       $('#editProfilForm').on('submit', function(e) {
+             console.log("Form submit event triggered");
+
     e.preventDefault();
-    let updatedProfil = getFormData($("#editProfilForm"));
+    let updatedProfil = getFormData($('#editProfilForm'));
     delete updatedProfil.matchedPassword;
     delete updatedProfil.matchedEmail;
-    API.modifyUserProfil(updatedProfil)
-      .then((response) => {
-        if (response) {
-          API.storeLoggedUser(response);
-        } else {
+
+       API.modifyUserProfil(updatedProfil).then(response => {
+    if (response) {
+        if (updatedProfil.Email !== loggedUser.Email) {
+            logout();
+            renderLogin("Votre compte a été modifié et votre courriel a été mis à jour. Veuillez vérifier votre courriel pour le code de vérification.", "", updatedProfil.Email, "", "");
+        } else 
+        {
+                loggedUser = response;
+            renderPhotos();
         }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-      });
-  });
+    }
+}).catch(error => {
+    console.error('Error:', error);
+});
+       });
 
-  $("#abortCmd").on("click", function () {
-    renderPhotos();
-  });
-  $("#deleteAccountBtn").on("click", function () {
-    renderConfirmDeleteProfil();
-  });
-  restoreContentScrollPosition();
-}
 
+
+
+        $('#abortCmd').on('click', function() {
+            renderPhotos();
+        });
+        $('#deleteAccountBtn').on('click', function() {
+            renderConfirmDeleteProfil();
+        });
+        restoreContentScrollPosition();
+    }
 function renderConfirmDeleteProfil() {
-  eraseContent();
-  updateHeader("Retrait de compte");
+    eraseContent();
+    updateHeader("Retrait de compte");
 
-  let confirmDeleteContent = `
+    let confirmDeleteContent = `
     <div class="confirmDeleteContainer center">
     <h2 class="viewTitle">Voulez-vous vraiment effacer votre compte?</h2>
     <div class="form confirmForm">
@@ -693,30 +740,31 @@ function renderConfirmDeleteProfil() {
   </div>
     `;
 
-  $("#content").append($(confirmDeleteContent));
+    $("#content").append($(confirmDeleteContent));
 
-  $("#confirmDeleteBtn").on("click", function () {
-    API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
-      if (isDeleted) {
-        logout();
-        renderLogin("Votre compte a été supprimé avec succès.");
-      } else {
-        renderModifyPersonnage();
-      }
+    $("#confirmDeleteBtn").on('click', function() {
+        API.unsubscribeAccount(loggedUser.Id).then((isDeleted) => {
+            if (isDeleted) {
+                logout();
+                renderLogin("Votre compte a été supprimé avec succès.");
+            } else {
+                renderModifyPersonnage();
+            }
+        });
     });
-  });
 
-  $("#cancelDeleteBtn").on("click", function () {
-    renderModifyPersonnage();
-  });
+    $("#cancelDeleteBtn").on('click', function() {
+        renderModifyPersonnage();
+    });
 }
 
-function renderProbleme() {
-  saveContentScrollPosition();
-  eraseContent();
-  updateHeader("Problème");
 
-  let serverErrorContent = `
+function renderProbleme() {
+    saveContentScrollPosition();
+    eraseContent();
+    updateHeader("Problème");
+
+    let serverErrorContent = `
         <div class="content" style="text-align:center">
             <div class="errorContainer">
                 <h2>Le serveur ne répond pas</h2>
@@ -728,13 +776,13 @@ function renderProbleme() {
         </div>
     `;
 
-  $("#content").append($(serverErrorContent));
+    $("#content").append($(serverErrorContent));
 
-  $("#connexion").on("click", function () {
-    renderLogin();
-  });
+    $('#connexion').on('click', function() {
+        renderLogin();
+    });
 
-  restoreContentScrollPosition();
+    restoreContentScrollPosition();
 }
 
 //#endregion

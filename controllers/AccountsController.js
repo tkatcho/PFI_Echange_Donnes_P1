@@ -70,6 +70,17 @@ export default class AccountsController extends Controller {
     const gmail = new Gmail();
     gmail.send(user1.Email, "Vérification de courriel...", html);
   }
+   sendVerificationEmailModify(user) {
+
+    let html = `
+                Bonjour ${user.Name}, <br /> <br />
+                Voici votre code pour confirmer votre adresse de courriel
+                <br />
+                <h3>${user.VerifyCode}</h3>
+            `;
+    const gmail = new Gmail();
+    gmail.send(user.Email, "Vérification de courriel...", html);
+  }
   sendConfirmedEmail(user) {
     let html = `
                 Bonjour ${user.Name}, <br /> <br />
@@ -156,7 +167,7 @@ export default class AccountsController extends Controller {
           user.Authorizations = foundedUser.Authorizations;
           if (user.Email != foundedUser.Email) {
             user.VerifyCode = utilities.makeVerifyCode(6);
-            this.sendVerificationEmail(user);
+            this.sendVerificationEmailModify(user);
           }
           let updatedUser = this.repository.update(user.Id, user);
           if (this.repository.model.state.isValid) {
